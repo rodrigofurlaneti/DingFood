@@ -1,0 +1,11 @@
+﻿namespace DingFood.Application.Features.Tables;
+
+public sealed record TableResponse(
+    long Id,
+    long BranchId,
+    long TableStatusId,
+    int Number,
+    int? Capacity,
+    bool IsCameraInputEnabled,
+    bool IsBarcodeEnabled,
+    bool IsQrCodeEnabled);

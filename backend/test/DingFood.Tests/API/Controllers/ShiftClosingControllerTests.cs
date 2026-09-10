@@ -1,0 +1,154 @@
+﻿using FluentAssertions;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using NSubstitute;
+using DingFood.API.Controllers;
+using DingFood.Application.Features.Shift;
+using DingFood.Application.Features.Shift.CloseShift;
+using DingFood.Application.Features.Shift.GetById;
+using DingFood.Application.Features.Shift.GetHistory;
+using DingFood.Application.Features.Shift.GetOpenShift;
+using DingFood.Application.Features.Shift.OpenShift;
+using DingFood.Domain.Primitives;
+using DingFood.Domain.Repositories;
+using DingFood.Tests.API.Controllers.TestSupport;
+using Xunit;
+
+namespace DingFood.Tests.API.Controllers;
+
+public sealed class ShiftClosingControllerTests
+{
+    private readonly IMediator _mediator = Substitute.For<IMediator>();
+    private readonly ILogTrackerRepository _logRepository = Substitute.For<ILogTrackerRepository>();
+    private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
+    private readonly ShiftClosingController _controller;
+
+    public ShiftClosingControllerTests()
+    {
+        _controller = new ShiftClosingController(_mediator, _logRepository, _unitOfWork);
+        ControllerTestHelpers.AttachHttpContext(_controller);
+    }
+
+    private static ShiftClosingResponse SampleResponse(long id = 1) =>
+        new(id, 1, 1, 1, null, DateTime.Today, null, 1, 100m, 100m, 100m, 0m, null);
+
+    [Fact]
+    public async Task GetById_Success_ShouldReturnOkWithValue()
+    {
+        var response = SampleResponse();
+        _mediator.Send(Arg.Is<GetShiftClosingByIdQuery>(q => q.ShiftClosingId == 1), Arg.Any<CancellationToken>())
+            .Returns(Result.Success(response));
+
+        var result = await _controller.GetById(1, CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>().Which.Value.Should().Be(response);
+    }
+
+    [Fact]
+    public async Task GetById_Failure_ShouldReturnMappedErrorResult()
+    {
+        _mediator.Send(Arg.Any<GetShiftClosingByIdQuery>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Failure<ShiftClosingResponse>(new Error("ShiftClosing.NotFound", "turno nao encontrado")));
+
+        var result = await _controller.GetById(999, CancellationToken.None);
+
+        result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetOpen_Success_ShouldReturnOkWithValue()
+    {
+        var response = SampleResponse();
+        _mediator.Send(Arg.Is<GetOpenShiftClosingQuery>(q => q.BranchId == 3), Arg.Any<CancellationToken>())
+            .Returns(Result.Success(response));
+
+        var result = await _controller.GetOpen(3, CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>().Which.Value.Should().Be(response);
+    }
+
+    [Fact]
+    public async Task GetOpen_Failure_ShouldReturnMappedErrorResult()
+    {
+        _mediator.Send(Arg.Any<GetOpenShiftClosingQuery>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Failure<ShiftClosingResponse>(new Error("ShiftClosing.NotFound", "nenhum turno aberto")));
+
+        var result = await _controller.GetOpen(3, CancellationToken.None);
+
+        result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetHistory_Success_ShouldReturnOkWithValue()
+    {
+        IReadOnlyCollection<ShiftClosingResponse> history = [SampleResponse()];
+        _mediator.Send(Arg.Is<GetShiftClosingHistoryQuery>(q => q.BranchId == 3 && q.ReferenceYear == 2026 && q.ReferenceMonth == 8),
+            Arg.Any<CancellationToken>()).Returns(Result.Success(history));
+
+        var result = await _controller.GetHistory(3, 2026, 8, CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>().Which.Value.Should().Be(history);
+    }
+
+    [Fact]
+    public async Task GetHistory_Failure_ShouldReturnMappedErrorResult()
+    {
+        _mediator.Send(Arg.Any<GetShiftClosingHistoryQuery>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Failure<IReadOnlyCollection<ShiftClosingResponse>>(
+                new Error("ShiftClosingHistory.InvalidMonth", "mes invalido")));
+
+        var result = await _controller.GetHistory(3, 2026, 13, CancellationToken.None);
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task Open_Success_ShouldReturnCreatedAtActionPointingToGetById()
+    {
+        var command = new OpenShiftClosingCommand(1, 1);
+        _mediator.Send(command, Arg.Any<CancellationToken>()).Returns(Result.Success(42L));
+
+        var result = await _controller.Open(command, CancellationToken.None);
+
+        var created = result.Should().BeOfType<CreatedAtActionResult>().Subject;
+        created.ActionName.Should().Be(nameof(_controller.GetById));
+        created.RouteValues!["id"].Should().Be(42L);
+        created.Value.Should().Be(42L);
+    }
+
+    [Fact]
+    public async Task Open_Failure_ShouldReturnMappedErrorResult()
+    {
+        var command = new OpenShiftClosingCommand(1, 1);
+        _mediator.Send(command, Arg.Any<CancellationToken>()).Returns(Result.Failure<long>(new Error("Branch.NotFound", "filial nao encontrada")));
+
+        var result = await _controller.Open(command, CancellationToken.None);
+
+        result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task Close_Success_ShouldSendCommandWithIdAndReturnOkWithValue()
+    {
+        var request = new CloseShiftClosingRequest(2, "fechamento normal");
+        var response = SampleResponse();
+        _mediator.Send(Arg.Is<CloseShiftClosingCommand>(c => c.ShiftClosingId == 1 && c.ClosedByEmployeeId == 2 && c.Notes == "fechamento normal"),
+            Arg.Any<CancellationToken>()).Returns(Result.Success(response));
+
+        var result = await _controller.Close(1, request, CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>().Which.Value.Should().Be(response);
+    }
+
+    [Fact]
+    public async Task Close_Failure_ShouldReturnMappedErrorResult()
+    {
+        var request = new CloseShiftClosingRequest(2, null);
+        _mediator.Send(Arg.Any<CloseShiftClosingCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Failure<ShiftClosingResponse>(new Error("ShiftClosing.AlreadyClosed", "turno ja fechado")));
+
+        var result = await _controller.Close(1, request, CancellationToken.None);
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+    }
+}

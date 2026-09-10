@@ -1,0 +1,8 @@
+﻿using DingFood.Application.Abstractions.Messaging;
+
+namespace DingFood.Application.Features.Integrations.Ifood.Catalog.OptionGroups;
+
+// Fase 10 — atualiza o preço de uma opção (PUT catalog/v2.0/merchants/{merchantId}/options/{optionId}/price).
+public sealed record SetIfoodOptionPriceCommand(
+    long BranchId, Guid OptionId, decimal Value, decimal? OriginalValue, string? ParentCustomizationOptionId)
+    : ICommand;

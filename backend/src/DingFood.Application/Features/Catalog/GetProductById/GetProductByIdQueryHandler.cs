@@ -1,0 +1,46 @@
+﻿using DingFood.Application.Abstractions.Messaging;
+using DingFood.Domain.Primitives;
+using DingFood.Domain.Repositories;
+namespace DingFood.Application.Features.Catalog.GetProductById
+{
+    internal sealed class GetProductByIdQueryHandler(
+        IProductRepository productRepository,
+        ILogTrackerRepository logRepository,
+        IUnitOfWork unitOfWork)
+        : BaseQueryHandler<GetProductByIdQuery, ProductResponse>(logRepository, unitOfWork)
+    {
+        public override async Task<Result<ProductResponse>> Handle(GetProductByIdQuery request, CancellationToken cancellationToken)
+        {
+            return await ExecuteWithLogAsync(
+                nameof(GetProductByIdQueryHandler),
+                nameof(Handle),
+                null,
+                async (userIdBox) =>
+                {
+                    var product = await productRepository.GetByIdAsync(request.ProductId, cancellationToken);
+                    if (product is null || !product.IsActive)
+                        return Result.Failure<ProductResponse>(new Error("Product.NotFound", "Product not found."));
+                    var response = new ProductResponse(
+                        product.Id,
+                        product.CategoryId,
+                        product.UnitOfMeasureId,
+                        product.Name,
+                        product.Description,
+                        product.Barcode,
+                        product.SalePrice,
+                        product.CostPrice,
+                        product.IsStockControlled,
+                        product.PreparationTimeMinutes,
+                        product.ImageUrl
+                    )
+                    {
+                        HasOptionalExtras = product.HasOptionalExtras,
+                        HasBoosts = product.HasBoosts,
+                        OptionalExtras = product.OptionalExtras.Where(x => product.HasOptionalExtras && x.IsActive).OrderBy(x => x.DisplayOrder).ThenBy(x => x.Id).Select(ProductExtras.ProductOptionalExtraResponse.From).ToArray(),
+                        Boosts = product.Boosts.Where(x => product.HasBoosts && x.IsActive).OrderBy(x => x.DisplayOrder).ThenBy(x => x.Id).Select(ProductExtras.ProductBoostResponse.From).ToArray()
+                    };
+                    return Result.Success(response);
+                });
+        }
+    }
+}

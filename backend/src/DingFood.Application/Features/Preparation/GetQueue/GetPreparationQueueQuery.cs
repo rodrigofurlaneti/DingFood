@@ -1,0 +1,28 @@
+﻿using DingFood.Application.Abstractions.Messaging;
+
+namespace DingFood.Application.Features.Preparation.GetQueue;
+
+public sealed record PreparationItemResponse(
+    long OrderItemId,
+    long ProductId,
+    string ProductName,
+    decimal Quantity,
+    long OrderItemStatusId,
+    string? Notes,
+    DateTime StartedAt,
+    int LimitMinutes,
+    bool IsBarItem,
+    string? RequestedBy);
+
+public sealed record PreparationTicketResponse(
+    long CustomerOrderId,
+    int? TableNumber,
+    string? ComandaCode,
+    long OrderTypeId,
+    long OrderOriginId,
+    string OrderOriginName,
+    string? CustomerName,
+    DateTime OpenedAt,
+    IReadOnlyCollection<PreparationItemResponse> Items);
+
+public sealed record GetPreparationQueueQuery(long BranchId) : IQuery<IReadOnlyCollection<PreparationTicketResponse>>;

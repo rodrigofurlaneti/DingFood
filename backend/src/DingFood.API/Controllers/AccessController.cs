@@ -1,0 +1,72 @@
+﻿using System.Security.Claims;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using DingFood.Application.Features.Access.GetFeatures;
+using DingFood.Application.Features.Access.GetJobTitleFeatures;
+using DingFood.Application.Features.Access.GetMyFeatures;
+using DingFood.Application.Features.Access.GetUserFeatures;
+using DingFood.Application.Features.Access.SetJobTitleFeatures;
+using DingFood.Application.Features.Access.SetUserFeatures;
+using DingFood.Domain.Constants;
+
+namespace DingFood.API.Controllers;
+
+[Authorize]
+public sealed class AccessController(IMediator mediator) : ApiController(mediator)
+{
+    [HttpGet("my-features")]
+    public Task<IActionResult> GetMyFeatures(CancellationToken ct) =>
+        ExecuteWithLogAsync(nameof(AccessController), nameof(GetMyFeatures), async () =>
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+            if (!long.TryParse(userIdClaim, out var userId))
+                return Unauthorized();
+
+            var isManager = FeatureCodes.ManagerRoles.Any(User.IsInRole);
+            var result = await Mediator.Send(new GetMyFeaturesQuery(userId, isManager), ct);
+            return result.IsFailure ? HandleFailure(result) : Ok(result.Value);
+        });
+
+    [HttpGet("features")]
+    public Task<IActionResult> GetFeatures(CancellationToken ct) =>
+        ExecuteWithLogAsync(nameof(AccessController), nameof(GetFeatures), async () =>
+        {
+            var result = await Mediator.Send(new GetFeaturesQuery(), ct);
+            return result.IsFailure ? HandleFailure(result) : Ok(result.Value);
+        });
+
+    [HttpGet("jobtitles/{jobTitleId:long}/features")]
+    public Task<IActionResult> GetJobTitleFeatures(long jobTitleId, CancellationToken ct) =>
+        ExecuteWithLogAsync(nameof(AccessController), nameof(GetJobTitleFeatures), async () =>
+        {
+            var result = await Mediator.Send(new GetJobTitleFeaturesQuery(jobTitleId), ct);
+            return result.IsFailure ? HandleFailure(result) : Ok(result.Value);
+        });
+
+    [HttpPut("jobtitles/{jobTitleId:long}/features")]
+    public Task<IActionResult> SetJobTitleFeatures(long jobTitleId, [FromBody] SetFeaturesRequest request, CancellationToken ct) =>
+        ExecuteWithLogAsync(nameof(AccessController), nameof(SetJobTitleFeatures), async () =>
+        {
+            var result = await Mediator.Send(new SetJobTitleFeaturesCommand(jobTitleId, request.FeatureIds.ToList()), ct);
+            return result.IsFailure ? HandleFailure(result) : NoContent();
+        });
+
+    [HttpGet("users/{appUserId:long}/features")]
+    public Task<IActionResult> GetUserFeatures(long appUserId, CancellationToken ct) =>
+        ExecuteWithLogAsync(nameof(AccessController), nameof(GetUserFeatures), async () =>
+        {
+            var result = await Mediator.Send(new GetUserFeaturesQuery(appUserId), ct);
+            return result.IsFailure ? HandleFailure(result) : Ok(result.Value);
+        });
+
+    [HttpPut("users/{appUserId:long}/features")]
+    public Task<IActionResult> SetUserFeatures(long appUserId, [FromBody] SetFeaturesRequest request, CancellationToken ct) =>
+        ExecuteWithLogAsync(nameof(AccessController), nameof(SetUserFeatures), async () =>
+        {
+            var result = await Mediator.Send(new SetUserFeaturesCommand(appUserId, request.FeatureIds.ToList()), ct);
+            return result.IsFailure ? HandleFailure(result) : NoContent();
+        });
+}
+
+public sealed record SetFeaturesRequest(IReadOnlyCollection<long> FeatureIds);

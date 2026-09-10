@@ -1,0 +1,13 @@
+﻿using DingFood.Domain.Entities;
+
+namespace DingFood.Domain.Repositories;
+
+public interface IDiningTableRepository
+{
+    Task<DiningTable?> GetByIdAsync(long id, CancellationToken cancellationToken = default);
+    Task<DiningTable?> GetByIdForUpdateAsync(long id, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<DiningTable>> GetByBranchAsync(long branchId, CancellationToken cancellationToken = default);
+    Task<DiningTable?> GetByQrTokenAsync(Guid token, CancellationToken cancellationToken = default);
+    Task AddAsync(DiningTable entity, CancellationToken cancellationToken = default);
+    void Update(DiningTable entity);
+}

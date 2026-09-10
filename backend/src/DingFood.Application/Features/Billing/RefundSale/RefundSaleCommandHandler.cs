@@ -1,0 +1,65 @@
+﻿using DingFood.Application.Abstractions.Messaging;
+using DingFood.Domain.Constants;
+using DingFood.Domain.Entities;
+using DingFood.Domain.Primitives;
+using DingFood.Domain.Repositories;
+
+namespace DingFood.Application.Features.Billing.RefundSale;
+
+internal sealed class RefundSaleCommandHandler(
+    ISaleRepository saleRepository,
+    ICustomerOrderRepository orderRepository,
+    ICashSessionRepository cashSessionRepository,
+    ICashMovementRepository cashMovementRepository,
+    IDiningTableRepository diningTableRepository,
+    IComandaRepository comandaRepository,
+    IUnitOfWork unitOfWork,
+    TimeProvider TimeProviderCustom) 
+    : ICommandHandler<RefundSaleCommand>
+{
+    public async Task<Result> Handle(RefundSaleCommand request, CancellationToken cancellationToken)
+    {
+        var sale = await saleRepository.GetByIdForUpdateAsync(request.SaleId, cancellationToken);
+        if (sale is null || !sale.IsActive)
+            return Result.Failure(new Error("Sale.NotFound", "Sale not found."));
+
+        // Estorno so com a sessao de caixa ainda ABERTA — depois do fechamento
+        // a conferencia ja foi feita e o acerto e contabil.
+        var session = await cashSessionRepository.GetByIdAsync(sale.CashSessionId, cancellationToken);
+        if (session is null || !session.IsOpen())
+            return Result.Failure(new Error("Sale.SessionClosed",
+                "A sessão de caixa desta venda já foi fechada — estorno indisponível."));
+
+        sale.Deactivate();
+
+        var order = await orderRepository.GetByIdForUpdateAsync(sale.CustomerOrderId, cancellationToken);
+        if (order is not null)
+        {
+            var currentTime = TimeProviderCustom.GetLocalNow().DateTime;
+            var reopened = order.ReopenForPayment(currentTime);
+            if (reopened.IsFailure)
+                return reopened;
+
+            if (order.DiningTableId.HasValue)
+            {
+                var table = await diningTableRepository.GetByIdForUpdateAsync(order.DiningTableId.Value, cancellationToken);
+                table?.ChangeStatus(TableStatusIds.EmFechamento);
+            }
+            if (order.ComandaId.HasValue)
+            {
+                var comanda = await comandaRepository.GetByIdForUpdateAsync(order.ComandaId.Value, cancellationToken);
+                comanda?.ChangeStatus(ComandaStatusIds.EmUso);
+            }
+        }
+
+        var movement = CashMovement.Create(
+            sale.CashSessionId, CashMovementTypeIds.EstornoVenda, sale.Id,
+            request.EmployeeId, sale.TotalAmount,
+            string.IsNullOrWhiteSpace(request.Reason) ? $"Estorno da venda #{sale.SaleNumber}" : request.Reason.Trim());
+        if (movement.IsSuccess)
+            await cashMovementRepository.AddAsync(movement.Value, cancellationToken);
+
+        await unitOfWork.CommitAsync(cancellationToken);
+        return Result.Success();
+    }
+}

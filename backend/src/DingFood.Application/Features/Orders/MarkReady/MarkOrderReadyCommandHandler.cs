@@ -1,0 +1,27 @@
+﻿using DingFood.Application.Abstractions.Messaging;
+using DingFood.Domain.Primitives;
+using DingFood.Domain.Repositories;
+
+namespace DingFood.Application.Features.Orders.MarkReady;
+
+internal sealed class MarkOrderReadyCommandHandler(
+    ICustomerOrderRepository orderRepository,
+    TimeProvider timeProvider,
+    ILogTrackerRepository logRepository,
+    IUnitOfWork unitOfWork) : BaseCommandHandler<MarkOrderReadyCommand>(logRepository, unitOfWork)
+{
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    public override Task<Result> Handle(MarkOrderReadyCommand request, CancellationToken cancellationToken) =>
+        ExecuteWithLogAsync(nameof(MarkOrderReadyCommandHandler), nameof(Handle), null, async _ =>
+        {
+            var order = await orderRepository.GetByIdForUpdateAsync(request.CustomerOrderId, cancellationToken);
+            if (order is null || !order.IsActive)
+                return Result.Failure(new Error("CustomerOrder.NotFound", "Order not found."));
+
+            var result = order.MarkReadyForDispatch(timeProvider.GetLocalNow().DateTime);
+            if (result.IsFailure) return result;
+
+            await _unitOfWork.CommitAsync(cancellationToken);
+            return Result.Success();
+        });
+}

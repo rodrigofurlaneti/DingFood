@@ -1,0 +1,20 @@
+﻿using DingFood.Domain.Entities;
+
+namespace DingFood.Domain.Repositories;
+
+public interface ICustomerOrderRepository
+{
+    Task<CustomerOrder?> GetByIdAsync(long id, CancellationToken cancellationToken = default);
+    Task<CustomerOrder?> GetByIdForUpdateAsync(long id, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<CustomerOrder>> GetOpenByBranchAsync(long branchId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<CustomerOrder>> GetByIdsAsync(IReadOnlyCollection<long> ids, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<CustomerOrder>> GetByBranchAndPeriodAsync(long branchId, DateTime from, DateTime to, CancellationToken cancellationToken = default);
+    Task<bool> HasOpenOrderForTableAsync(long diningTableId, CancellationToken cancellationToken = default);
+    Task<CustomerOrder?> GetOpenByTableForUpdateAsync(long diningTableId, CancellationToken cancellationToken = default);
+    Task<CustomerOrder?> GetOpenByComandaForUpdateAsync(long comandaId, CancellationToken cancellationToken = default);
+    Task<bool> HasOpenOrderForComandaAsync(long comandaId, CancellationToken cancellationToken = default);
+    Task AddAsync(CustomerOrder entity, CancellationToken cancellationToken = default);
+    Task<CustomerOrder?> GetOpenByComandaAsync(long comandaId, CancellationToken cancellationToken = default);
+    Task<CustomerOrder?> GetOpenByTableAsync(long diningTableId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<CustomerOrder>> GetByBranchAndOriginAsync(long branchId, long orderOriginId, DateTime from, DateTime to, CancellationToken cancellationToken = default);
+}

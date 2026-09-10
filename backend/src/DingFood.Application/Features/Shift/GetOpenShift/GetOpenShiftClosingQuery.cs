@@ -1,0 +1,5 @@
+﻿using DingFood.Application.Abstractions.Messaging;
+
+namespace DingFood.Application.Features.Shift.GetOpenShift;
+
+public sealed record GetOpenShiftClosingQuery(long BranchId) : IQuery<ShiftClosingResponse>;

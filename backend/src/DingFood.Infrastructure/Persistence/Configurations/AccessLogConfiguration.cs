@@ -1,0 +1,28 @@
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using DingFood.Domain.Entities;
+
+namespace DingFood.Infrastructure.Persistence.Configurations;
+
+internal sealed class AccessLogConfiguration : IEntityTypeConfiguration<AccessLog>
+{
+    public void Configure(EntityTypeBuilder<AccessLog> builder)
+    {
+        builder.ToTable("AccessLog");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedOnAdd();
+        
+        builder.Property(x => x.UserName).HasColumnType("varchar(150)").IsRequired();
+        builder.Property(x => x.EventType).HasColumnType("varchar(30)").IsRequired();
+        builder.Property(x => x.IpAddress).HasColumnType("varchar(45)");
+        builder.Property(x => x.UserAgent).HasColumnType("nvarchar(300)");
+        builder.Property(x => x.CreatedAt).HasColumnType("datetime(6)").IsRequired();
+        builder.Property(x => x.UpdatedAt).HasColumnType("datetime(6)");
+        
+        builder.HasIndex(x => x.AppUserId).HasDatabaseName("IX_AccessLog_AppUserId");
+        
+        builder.HasOne<AppUser>().WithMany().HasForeignKey(x => x.AppUserId).HasConstraintName("FK_AccessLog_AppUser").OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<CustomerAppUser>().WithMany().HasForeignKey(x => x.CustomerAppUserId)
+            .HasConstraintName("FK_AccessLog_CustomerAppUser").OnDelete(DeleteBehavior.Restrict);
+    }
+}

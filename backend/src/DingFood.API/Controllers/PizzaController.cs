@@ -1,0 +1,90 @@
+﻿using System.Text.Json.Serialization;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using DingFood.Application.Features.Catalog.Pizza.AddPizzaCrust;
+using DingFood.Application.Features.Catalog.Pizza.AddPizzaEdge;
+using DingFood.Application.Features.Catalog.Pizza.AddPizzaSize;
+using DingFood.Application.Features.Catalog.Pizza.CreatePizzaConfiguration;
+using DingFood.Application.Features.Catalog.Pizza.CreatePizzaFlavor;
+using DingFood.Application.Features.Catalog.Pizza.SetPizzaFlavorPrice;
+using DingFood.Application.Features.Integrations.Ifood.Catalog.Pizza;
+using DingFood.Domain.Repositories;
+
+namespace DingFood.API.Controllers;
+
+[Route("api/pizza")]
+public sealed class PizzaController(
+    IMediator mediator,
+    ILogTrackerRepository logRepository,
+    IUnitOfWork unitOfWork) : ApiController(mediator)
+{
+    [HttpPost("flavors")]
+    public Task<IActionResult> CreateFlavor([FromBody] CreatePizzaFlavorCommand command, CancellationToken ct) =>
+        ExecuteWithLogAsync(logRepository, unitOfWork, nameof(PizzaController), nameof(CreateFlavor), async () =>
+        {
+            var result = await Mediator.Send(command, ct);
+            return result.IsFailure ? HandleFailure(result) : Ok(result.Value);
+        });
+
+    [HttpPost("configurations")]
+    public Task<IActionResult> CreateConfiguration([FromBody] CreatePizzaConfigurationCommand command, CancellationToken ct) =>
+        ExecuteWithLogAsync(logRepository, unitOfWork, nameof(PizzaController), nameof(CreateConfiguration), async () =>
+        {
+            var result = await Mediator.Send(command, ct);
+            return result.IsFailure ? HandleFailure(result) : Ok(result.Value);
+        });
+
+    [HttpPost("configurations/{id:long}/sizes")]
+    public Task<IActionResult> AddSize(long id, [FromBody] AddPizzaSizeRequest request, CancellationToken ct) =>
+        ExecuteWithLogAsync(logRepository, unitOfWork, nameof(PizzaController), nameof(AddSize), async () =>
+        {
+            var result = await Mediator.Send(new AddPizzaSizeCommand(id, request.Name, request.Slices, request.AcceptedFractions, request.DisplayOrder), ct);
+            return result.IsFailure ? HandleFailure(result) : Ok(result.Value);
+        });
+
+    [HttpPost("configurations/{id:long}/crusts")]
+    public Task<IActionResult> AddCrust(long id, [FromBody] AddPizzaCrustRequest request, CancellationToken ct) =>
+        ExecuteWithLogAsync(logRepository, unitOfWork, nameof(PizzaController), nameof(AddCrust), async () =>
+        {
+            var result = await Mediator.Send(new AddPizzaCrustCommand(id, request.Name, request.ExtraPrice, request.DisplayOrder), ct);
+            return result.IsFailure ? HandleFailure(result) : Ok(result.Value);
+        });
+
+    [HttpPost("configurations/{id:long}/edges")]
+    public Task<IActionResult> AddEdge(long id, [FromBody] AddPizzaEdgeRequest request, CancellationToken ct) =>
+        ExecuteWithLogAsync(logRepository, unitOfWork, nameof(PizzaController), nameof(AddEdge), async () =>
+        {
+            var result = await Mediator.Send(new AddPizzaEdgeCommand(id, request.Name, request.ExtraPrice, request.DisplayOrder), ct);
+            return result.IsFailure ? HandleFailure(result) : Ok(result.Value);
+        });
+
+    [HttpPut("configurations/{id:long}/flavor-prices")]
+    public Task<IActionResult> SetFlavorPrice(long id, [FromBody] SetPizzaFlavorPriceRequest request, CancellationToken ct) =>
+        ExecuteWithLogAsync(logRepository, unitOfWork, nameof(PizzaController), nameof(SetFlavorPrice), async () =>
+        {
+            var result = await Mediator.Send(new SetPizzaFlavorPriceCommand(id, request.PizzaFlavorId, request.PizzaSizeId, request.Price), ct);
+            return result.IsFailure ? HandleFailure(result) : Ok(result.Value);
+        });
+
+    [HttpPost("configurations/{id:long}/Ifood-sync")]
+    public Task<IActionResult> SyncWithIfood(long id, [FromBody] SyncIfoodPizzaRequest request, CancellationToken ct) =>
+        ExecuteWithLogAsync(logRepository, unitOfWork, nameof(PizzaController), nameof(SyncWithIfood), async () =>
+        {
+            var result = await Mediator.Send(new SyncIfoodPizzaCommand(request.BranchId, id), ct);
+            return result.IsFailure ? HandleFailure(result) : Ok(result.Value);
+        });
+}
+public sealed record AddPizzaSizeRequest(
+    string Name, int? Slices,
+    [property: JsonRequired] int AcceptedFractions,
+    [property: JsonRequired] int DisplayOrder);
+public sealed record AddPizzaCrustRequest(
+    string Name, [property: JsonRequired] decimal ExtraPrice, [property: JsonRequired] int DisplayOrder);
+public sealed record AddPizzaEdgeRequest(
+    string Name, [property: JsonRequired] decimal ExtraPrice, [property: JsonRequired] int DisplayOrder);
+public sealed record SetPizzaFlavorPriceRequest(
+    [property: JsonRequired] long PizzaFlavorId,
+    [property: JsonRequired] long PizzaSizeId,
+    [property: JsonRequired] decimal Price);
+public sealed record SyncIfoodPizzaRequest([property: JsonRequired] long BranchId);
