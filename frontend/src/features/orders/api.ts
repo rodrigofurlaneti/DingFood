@@ -1,0 +1,85 @@
+import { api } from "../../lib/apiClient";
+import type { OrderItemComplementSelection, OrderResponse } from "../../lib/types";
+
+export interface OpenOrderPayload {
+  branchId: number;
+  diningTableId: number | null;
+  comandaId: number | null;
+  employeeId: number;
+  guestCount: number | null;
+  notes: string | null;
+  orderTypeId?: number;
+  customerName?: string | null;
+  customerPhone?: string | null;
+  deliveryAddress?: string | null;
+}
+
+export const getOrder = (id: number): Promise<OrderResponse> =>
+  api<OrderResponse>(`/api/orders/${id}`);
+
+export const getOpenOrdersByBranch = (branchId: number): Promise<OrderResponse[]> =>
+  api<OrderResponse[]>(`/api/orders/open/branch/${branchId}`);
+
+export const openOrder = (payload: OpenOrderPayload): Promise<number> =>
+  api<number>("/api/orders", { method: "POST", body: JSON.stringify(payload) });
+
+export const addOrderItem = (
+  orderId: number,
+  productId: number,
+  quantity: number,
+  notes: string | null,
+  employeeId: number | null,
+  // Fase 6a: seleção de complementos feita no ComplementSelectorModal, junto do lançamento —
+  // omitido/vazio quando o produto não tem grupos de complementos vinculados.
+  complements?: OrderItemComplementSelection[],
+  optionalExtraIds?: number[],
+  boostIds?: number[],
+): Promise<void> =>
+  api<void>(`/api/orders/${orderId}/items`, {
+    method: "POST",
+    body: JSON.stringify({ productId, quantity, notes, employeeId, complements: complements ?? null, optionalExtraIds, boostIds }),
+  });
+
+export const updateItemStatus = (
+  orderId: number,
+  itemId: number,
+  orderItemStatusId: number,
+  actorEmployeeId: number | null = null,
+): Promise<void> =>
+  api<void>(`/api/orders/${orderId}/items/${itemId}/status`, {
+    method: "PUT",
+    body: JSON.stringify({ orderItemStatusId, actorEmployeeId }),
+  });
+
+export const startOrderPreparation = (orderId: number): Promise<void> =>
+  api<void>(`/api/orders/${orderId}/start-preparation`, { method: "PUT" });
+
+export const markOrderReadyForDispatch = (orderId: number): Promise<void> =>
+  api<void>(`/api/orders/${orderId}/ready-for-dispatch`, { method: "PUT" });
+
+export const applyDiscount = (orderId: number, discountAmount: number): Promise<void> =>
+  api<void>(`/api/orders/${orderId}/discount`, {
+    method: "PUT",
+    body: JSON.stringify({ discountAmount }),
+  });
+
+export const closeOrder = (orderId: number, serviceFeeRate = 0.1): Promise<void> =>
+  api<void>(`/api/orders/${orderId}/close`, {
+    method: "PUT",
+    body: JSON.stringify({ serviceFeeRate }),
+  });
+
+export const reopenOrder = (orderId: number): Promise<void> =>
+  api<void>(`/api/orders/${orderId}/reopen`, { method: "PUT" });
+
+export const raiseCreditLimit = (orderId: number, newLimitAmount: number): Promise<void> =>
+  api<void>(`/api/orders/${orderId}/credit-limit`, {
+    method: "PUT",
+    body: JSON.stringify({ newLimitAmount }),
+  });
+
+export const removeServiceFee = (orderId: number): Promise<void> =>
+  api<void>(`/api/orders/${orderId}/remove-service-fee`, { method: "PUT" });
+
+export const cancelOrder = (orderId: number): Promise<void> =>
+  api<void>(`/api/orders/${orderId}/cancel`, { method: "PUT" });

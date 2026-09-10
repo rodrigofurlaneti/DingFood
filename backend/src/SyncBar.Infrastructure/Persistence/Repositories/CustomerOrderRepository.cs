@@ -1,0 +1,81 @@
+﻿using Microsoft.EntityFrameworkCore;
+using SyncBar.Domain.Constants;
+using SyncBar.Domain.Entities;
+using SyncBar.Domain.Repositories;
+
+namespace SyncBar.Infrastructure.Persistence.Repositories;
+
+internal sealed class CustomerOrderRepository(AppDbContext context) : ICustomerOrderRepository
+{
+    private static readonly long[] OpenStatuses =
+        [OrderStatusIds.Aberto, OrderStatusIds.EmAndamento, OrderStatusIds.AguardandoPagamento];
+
+    public async Task<CustomerOrder?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+        => await context.CustomerOrders.AsNoTracking()
+            .Include(x => x.Items)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+    public async Task<CustomerOrder?> GetByIdForUpdateAsync(long id, CancellationToken cancellationToken = default)
+        => await context.CustomerOrders
+            .Include(x => x.Items)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+    public async Task<IReadOnlyCollection<CustomerOrder>> GetOpenByBranchAsync(long branchId, CancellationToken cancellationToken = default)
+        => await context.CustomerOrders.AsNoTracking()
+            .Include(x => x.Items)
+            .Where(x => x.BranchId == branchId && x.IsActive && OpenStatuses.Contains(x.OrderStatusId))
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<CustomerOrder>> GetByIdsAsync(IReadOnlyCollection<long> ids, CancellationToken cancellationToken = default)
+        => await context.CustomerOrders.AsNoTracking()
+            .Include(x => x.Items)
+            .Where(x => ids.Contains(x.Id))
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<CustomerOrder>> GetByBranchAndPeriodAsync(
+        long branchId, DateTime from, DateTime to, CancellationToken cancellationToken = default)
+        => await context.CustomerOrders.AsNoTracking()
+            .Include(x => x.Items)
+            .Where(x => x.BranchId == branchId && x.IsActive && x.OpenedAt >= from && x.OpenedAt < to)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<CustomerOrder>> GetByBranchAndOriginAsync(
+        long branchId, long orderOriginId, DateTime from, DateTime to, CancellationToken cancellationToken = default)
+        => await context.CustomerOrders.AsNoTracking()
+            .Include(x => x.Items)
+            .Where(x => x.BranchId == branchId && x.OrderOriginId == orderOriginId && x.IsActive && x.OpenedAt >= from && x.OpenedAt < to)
+            .ToListAsync(cancellationToken);
+
+    public async Task<bool> HasOpenOrderForTableAsync(long diningTableId, CancellationToken cancellationToken = default)
+        => await context.CustomerOrders.AsNoTracking()
+            .AnyAsync(x => x.DiningTableId == diningTableId && x.IsActive && OpenStatuses.Contains(x.OrderStatusId), cancellationToken);
+
+    public async Task<CustomerOrder?> GetOpenByTableForUpdateAsync(long diningTableId, CancellationToken cancellationToken = default)
+        => await context.CustomerOrders
+            .Include(x => x.Items)
+            .FirstOrDefaultAsync(x => x.DiningTableId == diningTableId && x.IsActive && OpenStatuses.Contains(x.OrderStatusId), cancellationToken);
+
+    public async Task<CustomerOrder?> GetOpenByComandaForUpdateAsync(long comandaId, CancellationToken cancellationToken = default)
+        => await context.CustomerOrders
+            .Include(x => x.Items)
+            .FirstOrDefaultAsync(x => x.ComandaId == comandaId && x.IsActive && OpenStatuses.Contains(x.OrderStatusId), cancellationToken);
+
+    public async Task<bool> HasOpenOrderForComandaAsync(long comandaId, CancellationToken cancellationToken = default)
+        => await context.CustomerOrders.AsNoTracking()
+            .AnyAsync(x => x.ComandaId == comandaId && x.IsActive && OpenStatuses.Contains(x.OrderStatusId), cancellationToken);
+
+    public async Task AddAsync(CustomerOrder entity, CancellationToken cancellationToken = default)
+        => await context.CustomerOrders.AddAsync(entity, cancellationToken);
+
+    public async Task<CustomerOrder?> GetOpenByComandaAsync(long comandaId, CancellationToken cancellationToken = default)
+        => await context.CustomerOrders
+            .AsNoTracking()
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.ComandaId == comandaId && o.ClosedAt == null && o.IsActive, cancellationToken);
+
+    public async Task<CustomerOrder?> GetOpenByTableAsync(long diningTableId, CancellationToken cancellationToken = default)
+        => await context.CustomerOrders
+            .AsNoTracking()
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.DiningTableId == diningTableId && o.ClosedAt == null && o.IsActive, cancellationToken);
+}

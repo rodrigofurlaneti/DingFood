@@ -1,0 +1,150 @@
+import { useEffect, useId, useRef } from "react";
+import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { Button } from "./Button";
+
+interface Props {
+  onClose: () => void;
+  children: ReactNode;
+  title?: ReactNode;
+  footer?: ReactNode;
+  variant?: "center" | "drawer";
+  wide?: boolean;
+  /** fecha ao clicar no fundo (default: true) */
+  dismissable?: boolean;
+  /** rótulo acessível quando não há title visível */
+  ariaLabel?: string;
+  "data-testid"?: string;
+}
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Modal/Drawer acessível: role="dialog", aria-modal, trap de foco,
+ * Esc para fechar, retorno de foco ao elemento anterior e scroll lock.
+ */
+export function Modal({
+  onClose,
+  children,
+  title,
+  footer,
+  variant = "center",
+  wide = false,
+  dismissable = true,
+  ariaLabel,
+  "data-testid": testId,
+}: Props) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const isDrawer = variant === "drawer";
+
+  // onClose quase sempre chega como uma arrow function nova a cada render do
+  // pai (ex.: onClose={() => setCreating(false)}). Guardamos a versão mais
+  // recente numa ref e mantemos o efeito abaixo com deps [] (roda só no
+  // mount/unmount) — senão, a cada tecla digitada num campo do formulário o
+  // componente pai re-renderiza, `onClose` muda de identidade, o efeito
+  // reexecuta e rouba o foco de volta pro primeiro elemento focável do painel
+  // (o botão ✕), tirando o cursor do campo que a pessoa estava digitando.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Mesma razão do onCloseRef acima: o handler de teclado é montado uma vez (deps []), então
+  // precisa ler a versão mais recente de `dismissable` via ref — senão um modal aberto como
+  // dismissable e depois trocado pra não-dismissable (ou vice-versa) manteria o comportamento
+  // de Esc da renderização inicial. Achado de revisão (web-design-guidelines): antes, o clique
+  // no fundo respeitava `dismissable` mas a tecla Esc fechava sempre, incondicionalmente —
+  // inconsistência que quebrava modais não-dismissable (ex.: fluxo com alteração não salva).
+  const dismissableRef = useRef(dismissable);
+  useEffect(() => {
+    dismissableRef.current = dismissable;
+  }, [dismissable]);
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const panel = panelRef.current;
+
+    // foca o primeiro elemento focável (ou o painel) — só na abertura
+    const focusables = panel?.querySelectorAll<HTMLElement>(FOCUSABLE);
+    (focusables && focusables.length ? focusables[0] : panel)?.focus();
+
+    // scroll lock
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Nested dialogs are portals outside the parent panel. Only the focused
+      // dialog should handle Escape/Tab; otherwise both it and the drawer close.
+      if (!panel?.contains(e.target as Node)) return;
+      if (e.key === "Escape") {
+        if (!dismissableRef.current) return;
+        e.stopPropagation();
+        onCloseRef.current();
+        return;
+      }
+      if (e.key === "Tab" && panel) {
+        const items = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+          (el) => el.offsetParent !== null,
+        );
+        if (items.length === 0) {
+          e.preventDefault();
+          return;
+        }
+        const first = items[0];
+        const last = items[items.length - 1];
+        const active = document.activeElement as HTMLElement;
+        if (e.shiftKey && active === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && active === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown, true);
+      document.body.style.overflow = prevOverflow;
+      previouslyFocused?.focus?.();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intencional: só no mount/unmount, ver comentário acima
+  }, []);
+
+  return createPortal(
+    <div
+      className={`modal-backdrop ${isDrawer ? "is-drawer" : "is-center"}`}
+      onMouseDown={(e) => {
+        if (dismissable && e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={panelRef}
+        className={`modal-panel rise ${isDrawer ? "is-drawer" : "is-center"} ${wide ? "is-wide" : ""} ${footer ? "has-footer" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        aria-label={title ? undefined : ariaLabel}
+        tabIndex={-1}
+        data-testid={testId}
+      >
+        {title && (
+          <div className="modal-head">
+            <h3 id={titleId} className="display" style={{ fontSize: "1.5rem" }}>
+              {title}
+            </h3>
+            <Button iconOnly aria-label="Fechar" size="sm" onClick={onClose}>
+              ✕
+            </Button>
+          </div>
+        )}
+        {footer ? <div className="modal-body">{children}</div> : children}
+        {footer && <div className="modal-footer">{footer}</div>}
+      </div>
+    </div>,
+    document.body,
+  );
+}

@@ -1,0 +1,87 @@
+﻿using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using SyncBar.Application.Abstractions.Integrations.Ifood;
+
+namespace SyncBar.Infrastructure.Integrations.Ifood;
+
+/// <summary>
+/// Cliente HTTP real do módulo Analytics do Ifood (Fase 9) — analytics/v1.0, 1 endpoint (Search
+/// order metrics KPIs). Ver comentário completo em IIfoodAnalyticsClient sobre o payload padrão
+/// usado (o DSL real de filtro/agregação é enorme e não tem os valores válidos documentados
+/// campo-a-campo na coleção Postman oficial).
+/// </summary>
+internal sealed class IfoodAnalyticsClient(HttpClient httpClient) : IIfoodAnalyticsClient
+{
+    private const string BaseUrl = "https://merchant-api.Ifood.com.br/analytics/v1.0/merchants";
+
+    public async Task<IfoodOrderKpisResultDto> GetOrderKpisAsync(
+        string accessToken, string merchantId, DateTime periodStart, DateTime periodEnd, int page, int size,
+        CancellationToken cancellationToken = default)
+    {
+        var url = $"{BaseUrl}/{Uri.EscapeDataString(merchantId)}/orders/kpis";
+
+        var body = new
+        {
+            page,
+            size,
+            filter = new
+            {
+                referenceDate = new
+                {
+                    gte = periodStart.ToString("yyyy-MM-dd"),
+                    lte = periodEnd.ToString("yyyy-MM-dd"),
+                },
+            },
+            agg = new
+            {
+                dateIntervals = new[]
+                {
+                    new { from = periodStart.ToString("yyyy-MM-dd"), to = periodEnd.ToString("yyyy-MM-dd") },
+                },
+                groupBy = new { fields = new[] { "salesChannel" } },
+                // Na doc oficial (coleção Postman) o array de funções de agregação de cada métrica
+                // tem o mesmo tamanho para todas as métricas do payload (e mesmo tamanho de
+                // "dateIntervals") — ex.: com 2 dateIntervals, TODAS as métricas usam array de 2
+                // elementos. Antes desta correção "gmv" pedia 2 funções (["sum","avg"]) enquanto as
+                // demais métricas pediam só 1, inconsistente entre si e com o único dateInterval
+                // enviado aqui (1 elemento) — risco de 400 Bad Request no Ifood. Corrigido para 1
+                // elemento em todas as métricas, alinhado ao único dateInterval do período pedido.
+                metrics = new Dictionary<string, string[]>
+                {
+                    ["gmv"] = ["sum"],
+                    ["gmvWithoutDelivery"] = ["sum"],
+                    ["feesGrossValue"] = ["sum"],
+                    ["netDeliveryFee"] = ["sum"],
+                },
+            },
+        };
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException(response.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden
+                ? "Sem permissão para Analytics. Verifique analytics + merchant_scope e não misture chain_scope no mesmo app."
+                : "Falha ao extrair métricas Analytics do iFood.", null, response.StatusCode);
+
+        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        var root = document.RootElement;
+
+        var buckets = new List<string>();
+        if (root.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in data.EnumerateArray())
+                buckets.Add(item.GetRawText());
+        }
+
+        var currentPage = root.TryGetProperty("currentPage", out var cp) && cp.ValueKind == JsonValueKind.Number && cp.TryGetInt32(out var cpv)
+            ? cpv
+            : page;
+
+        return new IfoodOrderKpisResultDto(currentPage, buckets);
+    }
+}

@@ -1,0 +1,358 @@
+﻿import { useMemo, useState, type CSSProperties } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { generateTableQrToken, getTablesByBranch } from "../tables/api";
+import { getOpenOrdersByBranch } from "./api";
+import { getComandaSetting, getComandasByBranch } from "../comandas/api";
+import { OpenComandaDialog } from "../comandas/OpenComandaDialog";
+import { useAuthStore } from "../../stores/authStore";
+import { ComandaStatus, TableStatus, formatBRL } from "../../lib/types";
+import type { ComandaResponse, OrderResponse, TableResponse } from "../../lib/types";
+import { OrderDrawer } from "./OrderDrawer";
+import { OpenOrderDialog } from "./OpenOrderDialog";
+import { OpenDeliveryOrderDialog } from "./OpenDeliveryOrderDialog";
+import { QueryError } from "../../components/QueryError";
+import { Overlay } from "./Overlay";
+import { StorefrontHubModal } from "../storeFront/StorefrontHubModal";
+import { TableCard, TableCardSkeleton } from "./TableCard";
+import { ComandaCard, ComandaCardSkeleton } from "./ComandaCard";
+import { countOrderItems } from "./OrderCardSummary";
+import { EmptyState } from "../../ui/EmptyState";
+import { useCallback } from "react";
+
+const iconStyle = { width: 22, height: 22, color: "var(--amber)", flexShrink: 0 };
+
+function TablesIcon() {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={iconStyle} aria-hidden="true">
+            <path d="M3 10h18M3 10a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2M3 10v9a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-2h10v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-9" />
+        </svg>
+    );
+}
+
+function ComandasIcon() {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={iconStyle} aria-hidden="true">
+            <path d="M9 2h6a1 1 0 0 1 1 1v1H8V3a1 1 0 0 1 1-1z" />
+            <rect x="5" y="4" width="14" height="18" rx="2" />
+            <line x1="8" y1="11" x2="16" y2="11" />
+            <line x1="8" y1="15" x2="16" y2="15" />
+        </svg>
+    );
+}
+
+export function OrdersPage() {
+    const queryClient = useQueryClient();
+    const { branchId } = useAuthStore();
+    const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+    const [openingTable, setOpeningTable] = useState<TableResponse | null>(null);
+    const [openingComanda, setOpeningComanda] = useState<ComandaResponse | null>(null);
+    const [comandaSearch, setComandaSearch] = useState("");
+    const [qrTable, setQrTable] = useState<TableResponse | null>(null);
+    const [qrUrl, setQrUrl] = useState<string | null>(null);
+    const [openingDelivery, setOpeningDelivery] = useState(false);
+
+    // Estado para controlar a abertura do modal unificado de autoatendimento da filial
+    const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+
+    const qrMutation = useMutation({
+        mutationFn: (tableId: number) => generateTableQrToken(tableId),
+        onSuccess: (result) => setQrUrl(`${window.location.origin}/pedido/${result.token}`),
+    });
+
+    const tablesQuery = useQuery({
+        queryKey: ["tables", branchId],
+        queryFn: () => getTablesByBranch(branchId),
+        refetchInterval: 15_000,
+    });
+
+    const comandaSettingQuery = useQuery({
+        queryKey: ["comandas", "setting", branchId],
+        queryFn: () => getComandaSetting(branchId),
+    });
+
+    const comandasQuery = useQuery({
+        queryKey: ["comandas", branchId],
+        queryFn: () => getComandasByBranch(branchId),
+        refetchInterval: 15_000,
+    });
+
+    const ordersQuery = useQuery({
+        queryKey: ["orders", "open", branchId],
+        queryFn: () => getOpenOrdersByBranch(branchId),
+        refetchInterval: 15_000,
+    });
+
+    const orderByTable = useMemo(() => {
+        const map = new Map<number, OrderResponse>();
+        for (const order of ordersQuery.data ?? [])
+            if (order.diningTableId !== null) map.set(order.diningTableId, order);
+        return map;
+    }, [ordersQuery.data]);
+
+    const orderByComanda = useMemo(() => {
+        const map = new Map<number, OrderResponse>();
+        for (const order of ordersQuery.data ?? [])
+            if (order.comandaId !== null) map.set(order.comandaId, order);
+        return map;
+    }, [ordersQuery.data]);
+
+    const openTable = useCallback((id: number) => {
+        const order = orderByTable.get(id);
+        const table = tablesQuery.data?.find(item => item.id === id);
+        if (order) setSelectedOrderId(order.id);
+        else if (table?.tableStatusId === TableStatus.Livre) setOpeningTable(table);
+    }, [orderByTable, tablesQuery.data]);
+
+    const openComanda = useCallback((id: number) => {
+        const order = orderByComanda.get(id);
+        const comanda = comandasQuery.data?.find(item => item.id === id);
+        if (order) setSelectedOrderId(order.id);
+        else if (comanda?.comandaStatusId === ComandaStatus.Disponivel) setOpeningComanda(comanda);
+    }, [orderByComanda, comandasQuery.data]);
+
+    const filteredComandas = useMemo(
+        () =>
+            (comandasQuery.data ?? []).filter((c) =>
+                comandaSearch.trim() === "" ? true : c.code.includes(comandaSearch.trim()),
+            ),
+        [comandasQuery.data, comandaSearch],
+    );
+
+    const refresh = () => {
+        void queryClient.invalidateQueries({ queryKey: ["tables"] });
+        void queryClient.invalidateQueries({ queryKey: ["orders"] });
+        void queryClient.invalidateQueries({ queryKey: ["comandas"] });
+    };
+
+    return (
+        <>
+            <main style={{ padding: "22px", maxWidth: 1240, margin: "0 auto" }} data-testid="orders-page-main">
+                <section className="rise">
+                    <div className="ui-row ui-row-wrap" style={{ alignItems: "center", gap: 14, marginBottom: 14 }}>
+                        <TablesIcon />
+                        <h2 className="display" style={{ fontSize: "1.7rem" }}>
+                            Mesas
+                        </h2>
+                        <span style={{ color: "var(--ink-faint)", fontSize: "0.9rem" }}>
+                            toque numa mesa livre para abrir um pedido
+                        </span>
+                        <span className="ui-spacer" />
+                        <button
+                            className="btn-ghost"
+                            type="button"
+                            onClick={() => setOpeningDelivery(true)}
+                            data-testid="btn-new-delivery"
+                        >
+                            + Retirada / Delivery
+                        </button>
+                        <button
+                            className="btn-primary"
+                            type="button"
+                            disabled={(tablesQuery.data ?? []).length === 0}
+                            data-testid="btn-generate-qr-modal"
+                            onClick={() => { setQrUrl(null); setQrTable(tablesQuery.data?.[0] ?? null); }}
+                        >
+                            Gerar QR de autoatendimento
+                        </button>
+
+                        {/* Botão para abrir o modal unificado de link e QR Code da filial */}
+                        <button
+                            className="btn-ghost"
+                            type="button"
+                            onClick={() => setIsLinkModalOpen(true)}
+                            data-testid="btn-open-storefront-modal"
+                        >
+                            🔗 Gerar link de autoatendimento
+                        </button>
+                    </div>
+
+                    {tablesQuery.isError && <QueryError error={tablesQuery.error} what="as mesas" />}
+                    {ordersQuery.isError && <QueryError error={ordersQuery.error} what="os pedidos abertos" />}
+
+                    <div className="table-grid" data-testid="tables-grid" aria-busy={tablesQuery.isLoading}>
+                        {tablesQuery.isLoading
+                            ? Array.from({ length: 8 }, (_, i) => <TableCardSkeleton key={i} />)
+                            : (tablesQuery.data ?? []).map((table) => {
+                                  const order = orderByTable.get(table.id);
+                                  const isFree = table.tableStatusId === TableStatus.Livre;
+                                  return (
+                                      <TableCard
+                                          key={table.id}
+                                          id={table.id}
+                                          number={table.number}
+                                          statusId={table.tableStatusId}
+                                          capacity={table.capacity}
+                                          itemsCount={order ? countOrderItems(order) : undefined}
+                                          totalValue={order?.totalAmount}
+                                          openedAt={order?.openedAt}
+                                          disabled={!order && !isFree}
+                                          onOpen={openTable}
+                                      />
+                                  );
+                              })}
+                    </div>
+                    {tablesQuery.isSuccess && tablesQuery.data.length === 0 &&
+                        <EmptyState title="Nenhuma mesa cadastrada" description="Cadastre as mesas desta filial para começar a abrir contas no salão." />}
+                </section>
+
+                <section className="rise rise-2" style={{ marginTop: 34 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14, flexWrap: "wrap" }}>
+                        <ComandasIcon />
+                        <h2 className="display" style={{ fontSize: "1.7rem" }}>Comandas</h2>
+                        <span style={{ color: "var(--ink-faint)", fontSize: "0.9rem" }}>
+                            toque numa comanda livre para abrir uma conta individual
+                        </span>
+                        <span style={{ flex: 1 }} />
+                        {comandaSettingQuery.data && (
+                            <span className="chip" style={{ "--dot": "var(--busy)" } as CSSProperties}>
+                                limite {formatBRL(comandaSettingQuery.data.defaultLimitAmount)}
+                            </span>
+                        )}
+                        <input
+                            placeholder="nº…"
+                            aria-label="Buscar comanda pelo número"
+                            inputMode="numeric"
+                            value={comandaSearch}
+                            onChange={(e) => setComandaSearch(e.target.value)}
+                            style={{ width: 110 }}
+                            data-testid="input-comanda-search"
+                        />
+                    </div>
+
+                    {comandasQuery.isError && (
+                        <QueryError error={comandasQuery.error} what="as comandas" />
+                    )}
+
+                    <div className="comanda-grid" data-testid="comandas-grid" aria-busy={comandasQuery.isLoading}>
+                        {comandasQuery.isLoading
+                            ? Array.from({ length: 10 }, (_, i) => <ComandaCardSkeleton key={i} />)
+                            : filteredComandas.map((comanda) => {
+                                  const order = orderByComanda.get(comanda.id);
+                                  const isAvailable = comanda.comandaStatusId === ComandaStatus.Disponivel;
+                                  return (
+                                      <ComandaCard
+                                          key={comanda.id}
+                                          id={comanda.id}
+                                          code={comanda.code}
+                                          itemsCount={order ? countOrderItems(order) : undefined}
+                                          openedAt={order?.openedAt}
+                                          statusId={comanda.comandaStatusId}
+                                          totalValue={order?.totalAmount}
+                                          disabled={!order && !isAvailable}
+                                          onOpen={openComanda}
+                                      />
+                                  );
+                              })}
+                    </div>
+                    {comandasQuery.isSuccess && filteredComandas.length === 0 &&
+                        <EmptyState title={comandaSearch ? "Nenhuma comanda encontrada" : "Nenhuma comanda cadastrada"}
+                            description={comandaSearch ? "Tente buscar por outro número." : "Cadastre comandas para abrir contas individuais nesta filial."} />}
+                </section>
+            </main>
+
+            {openingComanda && (
+                <OpenComandaDialog
+                    comanda={openingComanda}
+                    onClose={() => setOpeningComanda(null)}
+                    onOpened={(orderId) => {
+                        setOpeningComanda(null);
+                        refresh();
+                        setSelectedOrderId(orderId);
+                    }}
+                />
+            )}
+
+            {openingTable && (
+                <OpenOrderDialog
+                    table={openingTable}
+                    onClose={() => setOpeningTable(null)}
+                    onOpened={(orderId) => {
+                        setOpeningTable(null);
+                        refresh();
+                        setSelectedOrderId(orderId);
+                    }}
+                />
+            )}
+
+            {selectedOrderId !== null && (
+                <OrderDrawer
+                    orderId={selectedOrderId}
+                    onClose={() => {
+                        setSelectedOrderId(null);
+                        refresh();
+                    }}
+                />
+            )}
+
+            {openingDelivery && (
+                <OpenDeliveryOrderDialog
+                    onClose={() => setOpeningDelivery(false)}
+                    onOpened={(orderId) => {
+                        setOpeningDelivery(false);
+                        refresh();
+                        setSelectedOrderId(orderId);
+                    }}
+                />
+            )}
+
+            {/* Modal limpo da filial (Link Geral + QR Code Geral da Filial) */}
+            <StorefrontHubModal
+                isOpen={isLinkModalOpen}
+                onClose={() => setIsLinkModalOpen(false)}
+                branchId={branchId}
+            />
+
+            {qrTable && (
+                <Overlay title="QR Code de autoatendimento" onClose={() => setQrTable(null)} data-testid="qr-overlay">
+                    <label style={{ display: "grid", gap: 4 }}>
+                        <span style={{ color: "var(--ink-dim)", fontSize: "0.85rem" }}>Mesa</span>
+                        <select
+                            value={qrTable.id}
+                            data-testid="select-qr-table"
+                            onChange={(e) => {
+                                const table = (tablesQuery.data ?? []).find((t) => t.id === Number(e.target.value)) ?? null;
+                                setQrTable(table);
+                                setQrUrl(null);
+                            }}
+                        >
+                            {(tablesQuery.data ?? []).map((t) => (
+                                <option key={t.id} value={t.id}>Mesa {t.number}</option>
+                            ))}
+                        </select>
+                    </label>
+
+                    {qrMutation.isError && (
+                        <p className="error-text" data-testid="qr-error-msg">
+                            Falha ao gerar o QR Code — confirme que existe um funcionário configurado
+                            para autoatendimento em Config. → Filial.
+                        </p>
+                    )}
+
+                    {qrUrl ? (
+                        <div style={{ display: "grid", gap: 10, justifyItems: "center" }}>
+                            <img
+                                src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrUrl)}`}
+                                alt={`QR Code de autoatendimento da mesa ${qrTable.number}`}
+                                width={220}
+                                height={220}
+                                style={{ borderRadius: 8, background: "#fff" }}
+                                data-testid="qr-code-img"
+                            />
+                            <input readOnly value={qrUrl} onFocus={(e) => e.target.select()} style={{ width: "100%" }} />
+                        </div>
+                    ) : (
+                        <button
+                            className="btn-primary"
+                            type="button"
+                            disabled={qrMutation.isPending}
+                            onClick={() => qrMutation.mutate(qrTable.id)}
+                            data-testid="btn-submit-qr"
+                        >
+                            {qrMutation.isPending ? "Gerando…" : "Gerar QR Code"}
+                        </button>
+                    )}
+                </Overlay>
+            )}
+        </>
+    );
+}

@@ -1,0 +1,39 @@
+{
+  "name": "syncbar-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "test:e2e:storefront": "playwright test test/features/storeFront",
+    "test:e2e:storefront:devices": "playwright test --config playwright.storefront-devices.config.ts",
+    "test:e2e:storefront:live": "playwright test --config playwright.storefront-live.config.ts",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.62.0",
+    "html5-qrcode": "^2.3.8",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0",
+    "sweetalert2": "^11.26.25",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.42.0",
+    "@storybook/react-vite": "^8.6.14",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^10.9.1",
+    "storybook": "^8.6.14",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}

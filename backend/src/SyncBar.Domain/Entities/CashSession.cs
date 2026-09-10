@@ -1,0 +1,86 @@
+﻿using SyncBar.Domain.Constants;
+using SyncBar.Domain.Primitives;
+
+namespace SyncBar.Domain.Entities;
+
+public sealed class CashSession : AggregateRoot
+{
+    public long CashRegisterId { get; private set; }
+    public long CashSessionStatusId { get; private set; }
+    public long OpenedByEmployeeId { get; private set; }
+    public long? ClosedByEmployeeId { get; private set; }
+    public decimal OpeningAmount { get; private set; }
+    public decimal? ClosingAmount { get; private set; }
+    public decimal? ExpectedAmount { get; private set; }
+    public decimal? DifferenceAmount { get; private set; }
+    public decimal? TotalDifferenceAmount { get; private set; }
+    public DateTime OpenedAt { get; private set; }
+    public DateTime? ClosedAt { get; private set; }
+    public DateTime CreatedAt { get; private set; }
+    public DateTime? UpdatedAt { get; private set; }
+    public bool IsActive { get; private set; }
+
+    private CashSession() : base(0) { }
+
+    private CashSession(long cashRegisterId, long openedByEmployeeId, decimal openingAmount) : base(0)
+    {
+        CashRegisterId = cashRegisterId;
+        OpenedByEmployeeId = openedByEmployeeId;
+        OpeningAmount = openingAmount;
+        CashSessionStatusId = CashSessionStatusIds.Aberto;
+        OpenedAt = DateTime.Now;
+        IsActive = true;
+        CreatedAt = DateTime.Now;
+    }
+
+    public static Result<CashSession> Open(long cashRegisterId, long openedByEmployeeId, decimal openingAmount)
+    {
+        if (openingAmount < 0)
+            return Result.Failure<CashSession>(new Error("CashSession.InvalidOpeningAmount", "Opening amount cannot be negative."));
+
+        return Result.Success(new CashSession(cashRegisterId, openedByEmployeeId, openingAmount));
+    }
+
+    // paymentReconciliations: conferencia por forma de pagamento (Cartao de Credito/Debito/Pix)
+    // ja validada e criada pelo handler (CashSessionPaymentReconciliation.Create por item). O
+    // total geral de quebra soma a diferenca do dinheiro com a de todas as modalidades conferidas.
+    public Result Close(
+        long closedByEmployeeId,
+        decimal closingAmount,
+        decimal expectedAmount,
+        IReadOnlyCollection<CashSessionPaymentReconciliation>? paymentReconciliations = null)
+    {
+        if (CashSessionStatusId != CashSessionStatusIds.Aberto)
+            return Result.Failure(new Error("CashSession.NotOpen", "Only an open session can be closed."));
+        if (closingAmount < 0)
+            return Result.Failure(new Error("CashSession.InvalidClosingAmount", "Closing amount cannot be negative."));
+
+        ClosedByEmployeeId = closedByEmployeeId;
+        ClosingAmount = closingAmount;
+        ExpectedAmount = expectedAmount;
+        DifferenceAmount = closingAmount - expectedAmount;
+        TotalDifferenceAmount = DifferenceAmount.Value + (paymentReconciliations?.Sum(r => r.DifferenceAmount) ?? 0m);
+        CashSessionStatusId = CashSessionStatusIds.Fechado;
+        ClosedAt = DateTime.Now;
+        UpdatedAt = DateTime.Now;
+        return Result.Success();
+    }
+
+    public Result MarkAsReviewed()
+    {
+        if (CashSessionStatusId != CashSessionStatusIds.Fechado)
+            return Result.Failure(new Error("CashSession.NotClosed", "Only a closed session can be reviewed."));
+
+        CashSessionStatusId = CashSessionStatusIds.Conferido;
+        UpdatedAt = DateTime.Now;
+        return Result.Success();
+    }
+
+    public bool IsOpen() => CashSessionStatusId == CashSessionStatusIds.Aberto;
+
+    public void Deactivate()
+    {
+        IsActive = false;
+        UpdatedAt = DateTime.Now;
+    }
+}

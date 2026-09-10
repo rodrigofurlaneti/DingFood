@@ -1,0 +1,310 @@
+﻿import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useAuthStore } from "../stores/authStore";
+import { useThemeStore } from "../stores/themeStore";
+import { CashDrawer } from "../features/cash/CashDrawer";
+import { ShiftDrawer } from "../features/shift/ShiftDrawer";
+import { useMyFeatures } from "../features/access/hooks";
+import { IFoodAlertsBell } from "./IFoodAlertsBell";
+import logoAsaas from "../image/asaas.png"; 
+import logoKeeta from "../image/keeta.png";
+import logoIFood from "../image/logoifood.jpg";
+
+// Importando os dois logos
+import logoDark from "../image/logodark.png";
+import logoLight from "../image/logoligth.png";
+
+const links = [
+    { to: "/", label: "Salão", feature: "Salao" },
+    { to: "/garcom", label: "Modo Garçom", feature: "Salao" },
+    { to: "/delivery", label: "Delivery", feature: "Salao" },
+    { to: "/preparo", label: "Preparo", feature: "Preparo" },
+];
+
+export function AppShell() {
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    const { userName, branchId, companyId, clear } = useAuthStore();
+    const { theme, toggleTheme } = useThemeStore();
+    const [cashOpen, setCashOpen] = useState(false);
+    const [shiftOpen, setShiftOpen] = useState(false);
+    const [navOpen, setNavOpen] = useState(false);
+    const featuresQuery = useMyFeatures();
+    const access = featuresQuery.data;
+    const canSee = (feature: string) =>
+        access !== undefined && (access.canManageAccess || access.features.includes(feature));
+
+    const closeNav = () => setNavOpen(false);
+
+    return (
+        <div style={{ animation: "fadeInAlpha 0.6s ease-out forwards", minHeight: "100%", display: "flex", flexDirection: "column" }}>
+            <style>{`
+                @keyframes fadeInAlpha {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+            `}</style>
+
+            {/* Achado de revisão (web-design-guidelines): sem skip link, quem navega só por teclado
+          precisa tabular pelo menu inteiro do topbar toda vez que troca de tela. Primeiro
+          elemento focável da página — invisível até receber foco. */}
+            <a href="#main-content" className="skip-link">
+                Pular para o conteúdo
+            </a>
+
+            <header className="topbar">
+                <button
+                    type="button"
+                    className="nav-toggle"
+                    aria-label={navOpen ? "Fechar menu" : "Abrir menu"}
+                    aria-expanded={navOpen}
+                    aria-controls="topbar-nav"
+                    onClick={() => setNavOpen((open) => !open)}
+                >
+                    {navOpen ? "✕" : "☰"}
+                </button>
+
+                {/* Alternância direta com base no estado 'theme' */}
+                <img
+                    src={theme === "light" ? logoLight : logoDark}
+                    alt="Logo do Sistema"
+                    style={{ height: 64, objectFit: "contain", transition: "opacity 0.2s ease-in-out" }}
+                />
+
+                <nav id="topbar-nav" className={`topbar-nav${navOpen ? " is-open" : ""}`}>
+                    {links.filter((link) => canSee(link.feature)).map((link) => (
+                        <NavLink
+                            key={link.to}
+                            to={link.to}
+                            end={link.to === "/"}
+                            onClick={closeNav}
+                            style={({ isActive }) => ({
+                                padding: "8px 14px",
+                                borderRadius: 8,
+                                textDecoration: "none",
+                                fontFamily: "var(--font-cond)",
+                                fontWeight: 600,
+                                letterSpacing: "0.05em",
+                                textTransform: "uppercase" as const,
+                                fontSize: "0.85rem",
+                                color: isActive ? "var(--amber-ink)" : "var(--ink-dim)",
+                                background: isActive ? "var(--amber)" : "transparent",
+                            })}
+                        >
+                            {link.label}
+                        </NavLink>
+                    ))}
+                    {access?.canManageAccess && (
+                        <NavLink
+                            to="/integracoes/ifood"
+                            id="ifood-link"
+                            className="ifood-link"
+                            onClick={closeNav}
+                            title="Central de integrações iFood — pedidos, cardápio, financeiro, logística e mais"
+                            style={({ isActive }) => ({
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "8px",
+                                padding: "8px 14px",
+                                borderRadius: 8,
+                                textDecoration: "none",
+                                fontFamily: "var(--font-cond)",
+                                fontWeight: 600,
+                                letterSpacing: "0.05em",
+                                textTransform: "uppercase" as const,
+                                fontSize: "0.85rem",
+                                color: isActive ? "#fff" : "#EA1D2C",
+                                background: isActive ? "#EA1D2C" : "transparent",
+                                border: "1px solid #EA1D2C",
+                            })}
+                        >
+                            {({ isActive }) => (
+                                <>
+                                    <img
+                                        src={logoIFood}
+                                        alt=""
+                                        aria-hidden="true"
+                                        style={{
+                                            width: 24,
+                                            height: 24,
+                                            objectFit: "contain",
+                                            filter: isActive ? "brightness(0) invert(1)" : "none",
+                                            transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease-in-out",
+                                        }}
+                                    />
+                                    <span>iFood</span>
+                                </>
+                            )}
+                        </NavLink>
+                    )}
+                    {access?.canManageAccess && (
+                        <NavLink
+                            to="/integracoes/asaas"
+                            id="asaas-link"
+                            className="asaas-link"
+                            onClick={closeNav}
+                            title="Integração Asaas — configurações, clientes, cobranças, cartões salvos e webhooks"
+                            style={({ isActive }) => ({
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "8px",
+                                padding: "8px 14px",
+                                borderRadius: 8,
+                                textDecoration: "none",
+                                fontFamily: "var(--font-cond)",
+                                fontWeight: 600,
+                                letterSpacing: "0.05em",
+                                textTransform: "uppercase" as const,
+                                fontSize: "0.85rem",
+                                color: isActive ? "#fff" : "#00A868",
+                                background: isActive ? "#00A868" : "transparent",
+                                border: "1px solid #00A868",
+                            })}
+                        >
+                            {({ isActive }) => (
+                                <>
+                                    <img
+                                        src={logoAsaas}
+                                        alt=""
+                                        aria-hidden="true"
+                                        style={{
+                                            width: 24,
+                                            height: 24,
+                                            objectFit: "contain",
+                                            filter: isActive ? "brightness(0) invert(1)" : "none",
+                                            transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease-in-out",
+                                        }}
+                                    />
+                                    <span>Asaas</span>
+                                </>
+                            )}
+                        </NavLink>
+                    )}
+                    {access?.canManageAccess && (
+                        <NavLink
+                            to="/integracoes/keeta"
+                            id="keeta-link"
+                            className="keeta-link"
+                            onClick={closeNav}
+                            title="Integração Keeta — credenciais OAuth, autorização de lojas e pedidos"
+                            style={({ isActive }) => ({
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "8px",
+                                padding: "8px 14px",
+                                borderRadius: 8,
+                                textDecoration: "none",
+                                fontFamily: "var(--font-cond)",
+                                fontWeight: 600,
+                                letterSpacing: "0.05em",
+                                textTransform: "uppercase" as const,
+                                fontSize: "0.85rem",
+                                color: isActive ? "#fff" : "#6E3AF2",
+                                background: isActive ? "#6E3AF2" : "transparent",
+                                border: "1px solid #6E3AF2",
+                            })}
+                        >
+                            {({ isActive }) => (
+                                <>
+                                    <img
+                                        src={logoKeeta}
+                                        alt=""
+                                        aria-hidden="true"
+                                        style={{
+                                            width: 24,
+                                            height: 24,
+                                            objectFit: "contain",
+                                            filter: isActive ? "brightness(0) invert(1)" : "none",
+                                            transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease-in-out",
+                                        }}
+                                    />
+                                    <span>Keeta</span>
+                                </>
+                            )}
+                        </NavLink>
+                    )}
+                    {access?.canManageAccess && (
+                        <NavLink
+                            to="/configuracoes"
+                            onClick={closeNav}
+                            style={({ isActive }) => ({
+                                padding: "8px 14px",
+                                borderRadius: 8,
+                                textDecoration: "none",
+                                fontFamily: "var(--font-cond)",
+                                fontWeight: 600,
+                                letterSpacing: "0.05em",
+                                textTransform: "uppercase" as const,
+                                fontSize: "0.85rem",
+                                color: isActive ? "var(--amber-ink)" : "var(--amber)",
+                                background: isActive ? "var(--amber)" : "transparent",
+                                border: "1px dashed var(--amber-deep)",
+                            })}
+                        >
+                            Config.
+                        </NavLink>
+                    )}
+                </nav>
+                <span style={{ flex: 1 }} />
+                <span
+                    className="chip topbar-branch-chip"
+                    style={{ "--dot": "var(--free)" } as React.CSSProperties}
+                >
+                    Filial {branchId}
+                </span>
+                {canSee("Caixa") && (
+                    <button type="button" className="btn-ghost" onClick={() => setCashOpen(true)}>
+                        Caixa
+                    </button>
+                )}
+                {access?.canManageAccess && (
+                    <button type="button" className="btn-ghost" onClick={() => setShiftOpen(true)}>
+                        Turno
+                    </button>
+                )}
+                {access?.canManageAccess && <IFoodAlertsBell companyId={companyId} />}
+                <button
+                    type="button"
+                    className="btn-ghost btn-icon"
+                    aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+                    title={theme === "dark" ? "Tema claro" : "Tema escuro"}
+                    onClick={toggleTheme}
+                >
+                    {theme === "dark" ? "☀" : "🌙"}
+                </button>
+                <span className="topbar-username" style={{ color: "var(--ink-dim)", fontSize: "0.92rem" }}>
+                    {userName}
+                </span>
+                <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={() => {
+                        queryClient.clear();
+                        clear();
+                        navigate("/login", { replace: true });
+                    }}
+                >
+                    Sair
+                </button>
+            </header>
+
+            {featuresQuery.isError && (
+                <p className="error-text" role="alert" style={{ padding: "10px 22px", margin: 0 }}>
+                    Falha ao carregar seus acessos — a API está atualizada e rodando? (Reinicie-a
+                    se acabou de aplicar a funcionalidade de acessos.)
+                </p>
+            )}
+
+            {/* tabIndex=-1: alvo do skip link acima — várias telas já têm seu próprio <main>
+          (ex.: ProductsPage), então este é um div focável simples em vez de outro <main>
+          aninhado (landmark duplicado seria inválido). */}
+            <div id="main-content" tabIndex={-1} style={{ flex: 1 }}>
+                <Outlet />
+            </div>
+
+            {cashOpen && <CashDrawer onClose={() => setCashOpen(false)} />}
+            {shiftOpen && <ShiftDrawer onClose={() => setShiftOpen(false)} />}
+        </div>
+    );
+}

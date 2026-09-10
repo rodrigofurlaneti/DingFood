@@ -1,0 +1,40 @@
+﻿services:
+  api:
+    image: ghcr.io/rodrigofurlaneti/syncbar-api:latest
+    pull_policy: always 
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ConnectionStrings__DefaultConnection: "${MYSQL_CONNECTION_STRING}"
+      Jwt__Secret: "${Jwt__Secret}"
+      Jwt__Issuer: "SyncBar"
+      Jwt__Audience: "SyncBar.Client"
+      Cors__AllowedOrigins__0: "http://localhost"
+      Cors__AllowedOrigins__1: "http://9.205.156.87:84"
+    ports:
+      - "8080:8080"
+    volumes:
+      - syncbar-uploads:/app/wwwroot/uploads
+      # Chave do DataProtection (criptografa/descriptografa segredos no banco, ex.: ClientSecret
+      # do Ifood). Sem volume, essa pasta vivia só na camada gravável do container e era perdida
+      # a cada "docker compose up --force-recreate" — todo deploy gerava uma chave nova e
+      # qualquer segredo criptografado com a chave anterior ficava ilegível ("erro de
+      # criptografia (Data Protection)" ao tentar pegar o token do Ifood).
+      - syncbar-dataprotection-keys:/app/app_data/protecting-keys
+      - syncbar-whatsapp-outbox:/app/data/whatsapp-outbox
+
+  frontend:
+    image: ghcr.io/rodrigofurlaneti/syncbar-frontend:latest
+    pull_policy: always 
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "84:80"
+    volumes:
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf
+
+volumes:
+  syncbar-uploads:
+  syncbar-dataprotection-keys:
+  syncbar-whatsapp-outbox:
