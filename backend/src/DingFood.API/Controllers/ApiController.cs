@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +18,7 @@ public abstract class ApiController(IMediator mediator) : ControllerBase
     protected IActionResult HandleFailure(Result result)
         => result.Error.Code switch
         {
+            var c when c.EndsWith(".Forbidden") => StatusCode(403, CreateProblemDetails(result)),
             var c when c.EndsWith(".NotFound") => NotFound(CreateProblemDetails(result)),
             var c when c.EndsWith(".AlreadyExists") => Conflict(CreateProblemDetails(result)),
             var c when c.EndsWith(".Duplicate") => Conflict(CreateProblemDetails(result)),
@@ -43,6 +44,10 @@ public abstract class ApiController(IMediator mediator) : ControllerBase
             var result = await action();
             UpdateLogFromResult(log, result);
             return result;
+        }
+        catch (DingFood.Domain.Exceptions.TenantAccessException)
+        {
+            return StatusCode(403, new ProblemDetails { Title = "Tenant.Forbidden", Detail = "O recurso não pertence à empresa ativa." });
         }
         catch (Exception ex)
         {

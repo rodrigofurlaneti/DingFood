@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -61,14 +61,17 @@ internal sealed class IfoodFinancialSyncBackgroundService(
     {
         using var scope = serviceProvider.CreateScope();
         var settingRepository = scope.ServiceProvider.GetRequiredService<IIfoodIntegrationSettingRepository>();
-        var mappingRepository = scope.ServiceProvider.GetRequiredService<IIfoodMerchantMappingRepository>();
-        var branchRepository = scope.ServiceProvider.GetRequiredService<IBranchRepository>();
-        var alertStore = scope.ServiceProvider.GetRequiredService<IIfoodOperationalAlertStore>();
-        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
         var companyIds = await settingRepository.GetEnabledCompanyIdsAsync(stoppingToken);
         foreach (var companyId in companyIds)
         {
+            using var companyScope = serviceProvider.CreateScope();
+            companyScope.ServiceProvider.GetService<DingFood.Infrastructure.Tenancy.CurrentTenantService>()?.SetBackgroundCompany(companyId);
+            var mappingRepository = companyScope.ServiceProvider.GetRequiredService<IIfoodMerchantMappingRepository>();
+            var branchRepository = companyScope.ServiceProvider.GetRequiredService<IBranchRepository>();
+            var alertStore = companyScope.ServiceProvider.GetRequiredService<IIfoodOperationalAlertStore>();
+            var mediator = companyScope.ServiceProvider.GetRequiredService<IMediator>();
+
             try
             {
                 await mediator.Send(new SyncIfoodFinancialCommand(companyId), stoppingToken);

@@ -7,4 +7,6 @@ public sealed record LoginResponse(
     DateTime RefreshTokenExpiresAt,
     string UserName,
     long CompanyId,
-    long? EmployeeId);
+    long? EmployeeId,
+    long? BusinessGroupId = null,
+    long? HomeCompanyId = null);

@@ -8,5 +8,6 @@ public interface IJwtTokenProvider
 {
     AccessToken GenerateCustomerToken(CustomerAppUser customer, IReadOnlyCollection<string> roles, IReadOnlyCollection<string> permissions);
     AccessToken GenerateToken(AppUser user, IReadOnlyCollection<string> roles, IReadOnlyCollection<string> permissions);
+    AccessToken GenerateCompanyToken(AppUser user, DingFood.Application.Abstractions.Tenancy.CompanyAccess company);
     string GenerateRefreshToken();
 }

@@ -14,6 +14,7 @@ namespace DingFood.Application
                 configuration.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
 
             services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly, includeInternalTypes: true);
+            services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(DingFood.Application.Abstractions.Tenancy.TenantRequestBehavior<,>));
 
             services.AddScoped<ICheckoutOrderPreparer, CheckoutOrderPreparer>();
             services.AddScoped<DingFood.Application.Features.Cash.IPaymentMethodAvailability, DingFood.Application.Features.Cash.PaymentMethodAvailability>();

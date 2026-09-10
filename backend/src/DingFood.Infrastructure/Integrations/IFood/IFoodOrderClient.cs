@@ -90,7 +90,7 @@ internal sealed class IfoodOrderClient(
                 if (events is null || events.Count == 0)
                     return;
 
-                allEvents.AddRange(events.Select(e => new IfoodPollingEvent(e.Id, e.Code, e.FullCode, e.OrderId, e.CreatedAt)));
+                allEvents.AddRange(events.Select(e => new IfoodPollingEvent(e.Id, e.Code, e.FullCode, e.OrderId, e.CreatedAt, e.MerchantId)));
             });
         }
 
@@ -475,7 +475,7 @@ internal sealed class IfoodOrderClient(
     private static string Truncate(string value) => value.Length > 300 ? value[..300] + "…" : value;
 
     // DTOs internos de desserialização atualizados para o payload real do iFood
-    private sealed record PollingEventDto(string Id, string Code, string? FullCode, string OrderId, DateTime CreatedAt);
+    private sealed record PollingEventDto(string Id, string Code, string? FullCode, string OrderId, DateTime CreatedAt, string? MerchantId);
 
     private sealed record OrderDetailsResponseDto(
         string Id, string? DisplayId, string OrderType, string? OrderTiming, string? Category,

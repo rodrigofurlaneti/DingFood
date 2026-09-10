@@ -21,6 +21,7 @@ internal sealed class IfoodMerchantMappingConfiguration : IEntityTypeConfigurati
         // Sem índice único filtrado — mesmo motivo de sempre (MySQL sem índice parcial). "1
         // mapeamento ativo por filial" é garantido pelo handler (upsert por BranchId).
         builder.HasIndex(x => x.BranchId).HasDatabaseName("IX_IfoodMerchantMapping_BranchId");
+        builder.HasIndex(x => x.MerchantUuid).IsUnique().HasDatabaseName("UX_IfoodMerchantMapping_MerchantUuid");
 
         builder.HasOne<Branch>().WithMany().HasForeignKey(x => x.BranchId)
             .HasConstraintName("FK_IfoodMerchantMapping_Branch").OnDelete(DeleteBehavior.Restrict);

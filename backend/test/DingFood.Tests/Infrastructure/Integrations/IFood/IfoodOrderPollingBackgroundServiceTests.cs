@@ -28,6 +28,8 @@ public sealed class IfoodOrderPollingBackgroundServiceTests
         var scopedProvider = Substitute.For<IServiceProvider>();
         scopedProvider.GetService(typeof(IIfoodIntegrationSettingRepository)).Returns(_settingRepository);
         scopedProvider.GetService(typeof(IMediator)).Returns(_mediator);
+        scopedProvider.GetService(typeof(DingFood.Infrastructure.Tenancy.CurrentTenantService))
+            .Returns(_ => new DingFood.Infrastructure.Tenancy.CurrentTenantService(new Microsoft.AspNetCore.Http.HttpContextAccessor()));
 
         var scope = Substitute.For<IServiceScope>();
         scope.ServiceProvider.Returns(scopedProvider);

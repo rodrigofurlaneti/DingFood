@@ -9,6 +9,7 @@ internal sealed class IfoodCatalogSyncTrigger(IServiceScopeFactory scopeFactory)
 {
     public void TriggerCompanySync(long companyId)
     {
+        using var flow = ExecutionContext.SuppressFlow();
         _ = Task.Run(async () =>
         {
             try
@@ -17,6 +18,7 @@ internal sealed class IfoodCatalogSyncTrigger(IServiceScopeFactory scopeFactory)
                 // faz várias chamadas HTTP pro Ifood e pode demorar mais que o tempo de vida do
                 // escopo original. Mesmo padrão usado por IfoodOrderPollingBackgroundService.
                 using var scope = scopeFactory.CreateScope();
+                scope.ServiceProvider.GetService<DingFood.Infrastructure.Tenancy.CurrentTenantService>()?.SetBackgroundCompany(companyId);
                 var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
                 await mediator.Send(new SyncIfoodCatalogCommand(companyId));
             }

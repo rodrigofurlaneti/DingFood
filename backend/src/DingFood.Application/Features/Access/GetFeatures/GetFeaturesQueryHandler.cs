@@ -12,7 +12,9 @@ internal sealed class GetMyFeaturesQueryHandler(
     IJobTitleFeatureRepository jobTitleFeatureRepository,
     IAppUserFeatureRepository userFeatureRepository,
     ILogTrackerRepository logRepository,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    DingFood.Application.Abstractions.Tenancy.ICurrentTenantService? tenant = null,
+    DingFood.Application.Abstractions.Tenancy.ICompanyAccessService? companyAccess = null)
     : BaseQueryHandler<GetMyFeaturesQuery, MyFeaturesResponse>(logRepository, unitOfWork)
 {
     public override Task<Result<MyFeaturesResponse>> Handle(GetMyFeaturesQuery request, CancellationToken cancellationToken) =>
@@ -27,6 +29,19 @@ internal sealed class GetMyFeaturesQueryHandler(
                 return Result.Success(new MyFeaturesResponse(true, allFeatures.Select(f => f.Code).ToList()));
 
             var user = await userRepository.GetByIdAsync(request.AppUserId, cancellationToken);
+            if (user is null && tenant?.CompanyId is { } companyId && companyAccess is not null)
+            {
+                var membership = await companyAccess.ResolveAsync(request.AppUserId, companyId, cancellationToken);
+                if (membership is null) return Result.Failure<MyFeaturesResponse>(new Error("Company.Forbidden", "Empresa não autorizada."));
+                var ids = new HashSet<long>();
+                if (membership.EmployeeId is { } employeeId)
+                {
+                    var employee = await employeeRepository.GetByIdAsync(employeeId, cancellationToken);
+                    if (employee is { IsActive: true })
+                        foreach (var link in await jobTitleFeatureRepository.GetByJobTitleAsync(employee.JobTitleId, cancellationToken)) ids.Add(link.AppFeatureId);
+                }
+                return Result.Success(new MyFeaturesResponse(false, allFeatures.Where(f => ids.Contains(f.Id)).Select(f => f.Code).ToList()));
+            }
             if (user is null || !user.IsActive)
                 return Result.Failure<MyFeaturesResponse>(new Error("AppUser.NotFound", "User not found."));
 

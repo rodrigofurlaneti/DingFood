@@ -4,6 +4,8 @@ namespace DingFood.Domain.Entities;
 
 public sealed class Company : AggregateRoot
 {
+    public long BusinessGroupId { get; private set; }
+    public BusinessGroup BusinessGroup { get; private set; } = null!;
     public string LegalName { get; private set; } = null!;
     public string TradeName { get; private set; } = null!;
     public string Cnpj { get; private set; } = null!;
@@ -24,6 +26,7 @@ public sealed class Company : AggregateRoot
         Phone = phone;
         IsActive = true;
         CreatedAt = DateTime.Now;
+        BusinessGroup = BusinessGroup.Create(tradeName).Value;
     }
 
     public static Result<Company> Create(string legalName, string tradeName, string cnpj, string? email, string? phone)
@@ -38,6 +41,15 @@ public sealed class Company : AggregateRoot
     }
 
     public void Touch() => UpdatedAt = DateTime.Now;
+
+    public Result AssignToGroup(BusinessGroup group)
+    {
+        if (!group.IsActive || (BusinessGroupId != 0 && BusinessGroupId != group.Id))
+            return Result.Failure(new Error("Company.InvalidGroup", "A empresa não pode ser transferida para outro grupo."));
+        BusinessGroup = group;
+        BusinessGroupId = group.Id;
+        return Result.Success();
+    }
 
     public void Deactivate()
     {

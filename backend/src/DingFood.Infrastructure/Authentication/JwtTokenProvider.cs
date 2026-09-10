@@ -54,18 +54,27 @@ internal sealed class JwtTokenProvider(IOptions<JwtOptions> options) : IJwtToken
     }
 
     public AccessToken GenerateToken(AppUser user, IReadOnlyCollection<string> roles, IReadOnlyCollection<string> permissions)
+        => GenerateUserToken(user, roles, permissions, user.CompanyId, null, user.EmployeeId);
+
+    public AccessToken GenerateCompanyToken(AppUser user, DingFood.Application.Abstractions.Tenancy.CompanyAccess company)
+        => GenerateUserToken(user, company.Roles, company.Permissions, company.CompanyId, company.BusinessGroupId, company.EmployeeId);
+
+    private AccessToken GenerateUserToken(AppUser user, IReadOnlyCollection<string> roles, IReadOnlyCollection<string> permissions,
+        long companyId, long? businessGroupId, long? employeeId)
     {
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.UniqueName, user.UserName),
             new(JwtRegisteredClaimNames.Email, user.Email),
-            new("companyId", user.CompanyId.ToString()),
+            new("companyId", companyId.ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        if (user.EmployeeId is { } employeeId)
-            claims.Add(new Claim("employeeId", employeeId.ToString()));
+        if (businessGroupId.HasValue) claims.Add(new Claim("businessGroupId", businessGroupId.Value.ToString()));
+        claims.Add(new Claim("accountType", "AppUser"));
+        if (employeeId.HasValue)
+            claims.Add(new Claim("employeeId", employeeId.Value.ToString()));
 
         claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
         claims.AddRange(permissions.Select(p => new Claim("permission", p)));

@@ -272,6 +272,9 @@ internal sealed class SyncIfoodOrdersCommandHandler : BaseCommandHandler<SyncIfo
         DateTime now, 
         CancellationToken cancellationToken)
     {
+        if (evt.MerchantId is not null && mappingsByBranch.Values.Count(m => m.IsActive &&
+            string.Equals(m.MerchantUuid, evt.MerchantId, StringComparison.OrdinalIgnoreCase)) != 1)
+            return false;
         if (IsDuplicateEvent($"{companyId}:{evt.Id}"))
             return true;
 
@@ -470,7 +473,9 @@ internal sealed class SyncIfoodOrdersCommandHandler : BaseCommandHandler<SyncIfo
         Stopwatch stopwatch,
         CancellationToken cancellationToken)
     {
-        var branchEntry = mappingsByBranch.FirstOrDefault(m => m.Value.MerchantUuid == details.MerchantId);
+        var matches = mappingsByBranch.Where(m => m.Value.IsActive &&
+            string.Equals(m.Value.MerchantUuid, details.MerchantId, StringComparison.OrdinalIgnoreCase)).ToArray();
+        var branchEntry = matches.Length == 1 ? matches[0] : default;
         if (branchEntry.Value is null)
         {
             var log = new LogTracker(0)

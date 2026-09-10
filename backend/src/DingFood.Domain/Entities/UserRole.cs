@@ -28,6 +28,7 @@ public sealed class UserRole : Entity
     }
 
     public void Touch() => UpdatedAt = DateTime.Now;
+    public void Reactivate() { IsActive = true; Touch(); }
     public void Deactivate()
     {
         IsActive = false;

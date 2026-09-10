@@ -15,22 +15,29 @@ let refreshing: Promise<boolean> | null = null;
 
 async function tryRefresh(): Promise<boolean> {
     refreshing ??= (async () => {
-        const { refreshToken, setSession, clear } = useAuthStore.getState();
+        const { refreshToken, companyId, setSession, clear } = useAuthStore.getState();
         if (!refreshToken) return false;
         try {
             const response = await fetch("/api/auth/refresh", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ refreshToken }),
+                body: JSON.stringify({ refreshToken, companyId }),
             });
             if (!response.ok) {
-                clear();
+                if (useAuthStore.getState().refreshToken === refreshToken) clear();
                 return false;
             }
-            setSession((await response.json()) as LoginResponse);
+            const session = (await response.json()) as LoginResponse;
+            const current = useAuthStore.getState();
+            if (current.refreshToken !== refreshToken) return false;
+            if (current.companyId !== companyId) {
+                useAuthStore.setState({ refreshToken: session.refreshToken });
+                return false;
+            }
+            setSession(session);
             return true;
         } catch {
-            clear();
+            if (useAuthStore.getState().refreshToken === refreshToken) clear();
             return false;
         } finally {
             refreshing = null;
@@ -40,21 +47,23 @@ async function tryRefresh(): Promise<boolean> {
 }
 
 export async function apiUpload<T>(path: string, formData: FormData, retry = true): Promise<T> {
-    const { accessToken } = useAuthStore.getState();
+    const { accessToken, companyId } = useAuthStore.getState();
 
     let response: Response;
     try {
         response = await fetch(path, {
             method: "POST",
-            headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+            headers: accessToken ? { Authorization: `Bearer ${accessToken}`, ...companyHeaders() } : {},
             body: formData,
         });
     } catch {
         throw new ApiError(0, "Network.Unreachable", "Não foi possível conectar à API — ela está rodando?");
     }
 
+    if (useAuthStore.getState().companyId !== companyId) throw new ApiError(409, "Company.ContextChanged", "A empresa ativa foi alterada.");
     if (response.status === 401 && retry) {
         const renewed = await tryRefresh();
+        if (useAuthStore.getState().companyId !== companyId) throw new ApiError(409, "Company.ContextChanged", "A empresa ativa foi alterada.");
         if (renewed) return apiUpload<T>(path, formData, false);
         throw new ApiError(401, "Auth.SessionExpired", "Sessão expirada. Entre novamente.");
     }
@@ -81,6 +90,7 @@ async function fetchJson(path: string, init: RequestInit | undefined, accessToke
             headers: {
                 "Content-Type": "application/json",
                 ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+                ...(accessToken ? companyHeaders() : {}),
                 ...init?.headers,
             },
         });
@@ -113,12 +123,16 @@ async function handleUnauthorized<T>(retryFn: () => Promise<T>): Promise<T> {
 }
 
 export async function api<T>(path: string, init?: RequestInit, retry = true): Promise<T> {
-    const { accessToken } = useAuthStore.getState();
+    const { accessToken, companyId } = useAuthStore.getState();
 
     const response = await fetchJson(path, init, accessToken);
+    if (useAuthStore.getState().companyId !== companyId) throw new ApiError(409, "Company.ContextChanged", "A empresa ativa foi alterada.");
 
     if (response.status === 401 && retry) {
-        return handleUnauthorized(() => api<T>(path, init, false));
+        return handleUnauthorized(() => {
+            if (useAuthStore.getState().companyId !== companyId) throw new ApiError(409, "Company.ContextChanged", "A empresa ativa foi alterada.");
+            return api<T>(path, init, false);
+        });
     }
 
     if (!response.ok) {
@@ -128,4 +142,9 @@ export async function api<T>(path: string, init?: RequestInit, retry = true): Pr
 
     if (response.status === 204) return undefined as T;
     return (await response.json()) as T;
+}
+
+function companyHeaders(): Record<string, string> {
+    const companyId = useAuthStore.getState().companyId;
+    return companyId ? { "X-Company-Id": String(companyId) } : {};
 }

@@ -35,6 +35,30 @@ public sealed class IfoodTokenProviderTests
     }
 
     [Fact]
+    public async Task ConcurrentCompaniesUseSeparateCredentialsAndCachedTokens()
+    {
+        var reached = 0;
+        var both = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        foreach (var id in new long[] { 1, 2 })
+        {
+            var setting = IfoodIntegrationSetting.Create(id).Value;
+            setting.SaveCredentials($"client-{id}", $"encrypted-{id}", true, null);
+            _settingRepository.GetByCompanyAsync(id, Arg.Any<CancellationToken>()).Returns(setting);
+            _secretProtector.Unprotect(Arg.Any<string>(), $"encrypted-{id}").Returns($"secret-{id}");
+            _authClient.AuthenticateAsync($"client-{id}", $"secret-{id}", Arg.Any<CancellationToken>()).Returns(async _ =>
+            {
+                if (Interlocked.Increment(ref reached) == 2) both.SetResult();
+                await both.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                return new IfoodAuthResult(true, $"token-{id}", 3600, null);
+            });
+        }
+        (await Task.WhenAll(_provider.GetAccessTokenAsync(1), _provider.GetAccessTokenAsync(2))).Should().Equal("token-1", "token-2");
+        (await _provider.GetAccessTokenAsync(1)).Should().Be("token-1");
+        (await _provider.GetAccessTokenAsync(2)).Should().Be("token-2");
+        await _authClient.Received(2).AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task GetAccessTokenAsync_CachedToken_ShouldReturnCachedWithoutCallingRepositoryOrAuthClient()
     {
         _cache.Set("Ifood:token:1", "cached-token");

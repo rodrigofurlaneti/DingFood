@@ -50,5 +50,8 @@ internal sealed class AppUserRepository(AppDbContext context) : IAppUserReposito
             .ToListAsync(cancellationToken);
 
     public async Task AddAsync(AppUser entity, CancellationToken cancellationToken = default)
-        => await context.AppUsers.AddAsync(entity, cancellationToken);
+    {
+        await context.AppUsers.AddAsync(entity, cancellationToken);
+        await context.AppUserCompanies.AddAsync(AppUserCompany.CreateHomeAccess(entity).Value, cancellationToken);
+    }
 }

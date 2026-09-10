@@ -10,7 +10,7 @@ internal sealed class CompanyRepository(AppDbContext context) : ICompanyReposito
         => await context.Companies.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
     public async Task<bool> ExistsByCnpjAsync(string cnpj, CancellationToken cancellationToken = default)
-        => await context.Companies.AsNoTracking().AnyAsync(x => x.Cnpj == cnpj, cancellationToken);
+        => await context.Companies.IgnoreQueryFilters().AsNoTracking().AnyAsync(x => x.Cnpj == cnpj, cancellationToken);
 
     public async Task AddAsync(Company entity, CancellationToken cancellationToken = default)
         => await context.Companies.AddAsync(entity, cancellationToken);

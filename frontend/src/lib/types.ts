@@ -6,6 +6,8 @@
   userName: string;
   companyId: number;
   employeeId: number | null;
+  businessGroupId?: number;
+  homeCompanyId?: number;
 }
 
 export interface OrderItemComplementResponse {

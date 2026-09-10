@@ -27,6 +27,7 @@ export function LoginPage() {
         mutationFn: () => login(userName, password),
         onSuccess: (session) => {
             queryClient.clear();
+            useAuthStore.getState().clear();
             setSession(session);
 
             // Feedback de Sucesso com SweetAlert

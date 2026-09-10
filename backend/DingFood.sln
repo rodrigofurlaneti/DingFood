@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DingFood.Domain", "src\Ding
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DingFood.Infrastructure", "src\DingFood.Infrastructure\DingFood.Infrastructure.csproj", "{42C087FB-5365-4178-1FB5-286E86772B79}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DingFood.Tests", "test\DingFood.Tests\DingFood.Tests.csproj", "{C1AB926C-DA51-43C5-A9F7-B4CF88E837CF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -115,6 +117,18 @@ Global
 		{42C087FB-5365-4178-1FB5-286E86772B79}.Release|x64.Build.0 = Release|Any CPU
 		{42C087FB-5365-4178-1FB5-286E86772B79}.Release|x86.ActiveCfg = Release|Any CPU
 		{42C087FB-5365-4178-1FB5-286E86772B79}.Release|x86.Build.0 = Release|Any CPU
+		{C1AB926C-DA51-43C5-A9F7-B4CF88E837CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1AB926C-DA51-43C5-A9F7-B4CF88E837CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1AB926C-DA51-43C5-A9F7-B4CF88E837CF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C1AB926C-DA51-43C5-A9F7-B4CF88E837CF}.Debug|x64.Build.0 = Debug|Any CPU
+		{C1AB926C-DA51-43C5-A9F7-B4CF88E837CF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C1AB926C-DA51-43C5-A9F7-B4CF88E837CF}.Debug|x86.Build.0 = Debug|Any CPU
+		{C1AB926C-DA51-43C5-A9F7-B4CF88E837CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1AB926C-DA51-43C5-A9F7-B4CF88E837CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1AB926C-DA51-43C5-A9F7-B4CF88E837CF}.Release|x64.ActiveCfg = Release|Any CPU
+		{C1AB926C-DA51-43C5-A9F7-B4CF88E837CF}.Release|x64.Build.0 = Release|Any CPU
+		{C1AB926C-DA51-43C5-A9F7-B4CF88E837CF}.Release|x86.ActiveCfg = Release|Any CPU
+		{C1AB926C-DA51-43C5-A9F7-B4CF88E837CF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -127,6 +141,7 @@ Global
 		{4D70881B-577C-7E82-D9A5-0343FA01C325} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{FAB1386E-9C82-E7DB-B2D7-81242A02DB80} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{42C087FB-5365-4178-1FB5-286E86772B79} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{C1AB926C-DA51-43C5-A9F7-B4CF88E837CF} = {86EE7067-01FE-4F3A-93BC-5AD9D2C1B675}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6CD86B72-7FFB-454A-B4FF-CB37ED8ADD86}

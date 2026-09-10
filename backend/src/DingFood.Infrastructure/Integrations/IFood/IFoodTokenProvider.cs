@@ -13,7 +13,8 @@ internal sealed class IfoodTokenProvider(
     ISecretProtector secretProtector,
     IIfoodAuthClient authClient,
     ILogTrackerRepository logRepository,
-    IUnitOfWork unitOfWork) : IIfoodTokenProvider
+    IUnitOfWork unitOfWork,
+    DingFood.Application.Abstractions.Tenancy.ICurrentTenantService? tenant = null) : IIfoodTokenProvider
 {
     private const string ProtectorPurpose = "DingFood.Integrations.Ifood.ClientSecret.v1";
 
@@ -21,6 +22,7 @@ internal sealed class IfoodTokenProvider(
 
     public async Task<string?> GetAccessTokenAsync(long companyId, CancellationToken cancellationToken = default)
     {
+        if (tenant?.CompanyId is { } activeCompany && activeCompany != companyId) return null;
         if (cache.TryGetValue<string>(CacheKey(companyId), out var cached) && !string.IsNullOrEmpty(cached))
             return cached;
 
@@ -84,6 +86,7 @@ internal sealed class IfoodTokenProvider(
 
     public async Task<string?> GetAccessTokenAsync(long companyId, Stopwatch stopwatch, CancellationToken cancellationToken = default)
     {
+        if (tenant?.CompanyId is { } activeCompany && activeCompany != companyId) return null;
         if (cache.TryGetValue<string>(CacheKey(companyId), out var cached) && !string.IsNullOrEmpty(cached))
             return cached;
 

@@ -25,14 +25,17 @@ internal sealed class IfoodShippingTrackingBackgroundService(
     internal async Task PollAsync(CancellationToken ct)
     {
         using var scope = scopes.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var tokens = scope.ServiceProvider.GetRequiredService<IIfoodTokenProvider>();
-        var client = scope.ServiceProvider.GetRequiredService<IIfoodShippingClient>();
+        var listingDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var now = time.GetUtcNow().UtcDateTime;
-        var pending = await db.Set<IfoodShippingTracking>().AsNoTracking()
+        var pending = await listingDb.Set<IfoodShippingTracking>().AsNoTracking()
             .Where(row => row.IsActive && row.NextPollAtUtc <= now).ToListAsync(ct);
         foreach (var row in pending)
         {
+            using var companyScope = scopes.CreateScope();
+            companyScope.ServiceProvider.GetService<DingFood.Infrastructure.Tenancy.CurrentTenantService>()?.SetBackgroundCompany(row.CompanyId);
+            var db = companyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var tokens = companyScope.ServiceProvider.GetRequiredService<IIfoodTokenProvider>();
+            var client = companyScope.ServiceProvider.GetRequiredService<IIfoodShippingClient>();
             var token = await tokens.GetAccessTokenAsync(row.CompanyId, ct);
             if (string.IsNullOrWhiteSpace(token)) continue;
             now = time.GetUtcNow().UtcDateTime;

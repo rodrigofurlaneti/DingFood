@@ -46,19 +46,25 @@ internal sealed class IfoodOrderPollingBackgroundService(
     {
         using var scope = serviceProvider.CreateScope();
         var settingRepository = scope.ServiceProvider.GetRequiredService<IIfoodIntegrationSettingRepository>();
-        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
         var companyIds = await settingRepository.GetEnabledCompanyIdsAsync(stoppingToken);
-        foreach (var companyId in companyIds)
+        await Parallel.ForEachAsync(companyIds.Distinct(), new ParallelOptions
+        {
+            MaxDegreeOfParallelism = 4, CancellationToken = stoppingToken
+        }, async (companyId, ct) =>
         {
             try
             {
-                await mediator.Send(new SyncIfoodOrdersCommand(companyId), stoppingToken);
+                using var companyScope = serviceProvider.CreateScope();
+                companyScope.ServiceProvider.GetRequiredService<DingFood.Infrastructure.Tenancy.CurrentTenantService>()
+                    .SetBackgroundCompany(companyId);
+                var mediator = companyScope.ServiceProvider.GetRequiredService<IMediator>();
+                await mediator.Send(new SyncIfoodOrdersCommand(companyId), ct);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Falha ao sincronizar pedidos Ifood da empresa {CompanyId}.", companyId);
             }
-        }
+        });
     }
 }

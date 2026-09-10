@@ -1,6 +1,7 @@
 ﻿import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuthStore } from "./stores/authStore";
+import { CompanyContextGate } from "./components/CompanyContextGate";
 import { AppShell } from "./components/AppShell";
 import { LoginPage } from "./features/auth/LoginPage";
 import { SignupPage } from "./features/auth/SignupPage";
@@ -12,6 +13,7 @@ import { ComplementsPage } from "./features/catalog/ComplementsPage";
 import { StockPage } from "./features/stock/StockPage";
 import { EmployeesPage } from "./features/employees/EmployeesPage";
 import { UsersPage } from "./features/users/UsersPage";
+import { CompaniesPage } from "./features/users/CompaniesPage";
 import { AccessPage } from "./features/access/AccessPage";
 import { SettingsPage } from "./features/settings/SettingsPage";
 import { FinancePage } from "./features/finance/FinancePage";
@@ -54,7 +56,7 @@ function ManagerGate({ children }: { children: ReactNode }) {
 function RequireAuth({ children }: { children: ReactNode }) {
     const accessToken = useAuthStore((s) => s.accessToken);
     if (!accessToken) return <Navigate to="/login" replace />;
-    return <>{children}</>;
+    return <CompanyContextGate>{children}</CompanyContextGate>;
 }
 
 export default function App() {
@@ -106,6 +108,7 @@ export default function App() {
                 <Route path="/estoque" element={<FeatureGate code="Estoque"><StockPage /></FeatureGate>} />
                 <Route path="/equipe" element={<ManagerGate><EmployeesPage /></ManagerGate>} />
                 <Route path="/usuarios" element={<ManagerGate><UsersPage /></ManagerGate>} />
+                <Route path="/empresas" element={<ManagerGate><CompaniesPage /></ManagerGate>} />
                 <Route path="/faturamento" element={<ManagerGate><FinancePage /></ManagerGate>} />
                 <Route path="/cenarios" element={<ManagerGate><ScenariosPage /></ManagerGate>} />
                 <Route path="/relatorios" element={<ManagerGate><ReportsPage /></ManagerGate>} />

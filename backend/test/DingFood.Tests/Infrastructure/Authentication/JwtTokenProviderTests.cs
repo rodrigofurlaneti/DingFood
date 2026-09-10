@@ -31,6 +31,18 @@ public sealed class JwtTokenProviderTests
         return result.Value;
     }
 
+    [Fact]
+    public void CompanyTokenCarriesSelectedCompanyGroupAndOnlyItsEmployee()
+    {
+        var user = CreateAppUser(100);
+        var company = new DingFood.Application.Abstractions.Tenancy.CompanyAccess(20, 5, "Grupo", "Pizza", "22222222000122", 200, ["Gerente"], []);
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(_provider.GenerateCompanyToken(user, company).Token);
+        jwt.Claims.Single(c => c.Type == "companyId").Value.Should().Be("20");
+        jwt.Claims.Single(c => c.Type == "businessGroupId").Value.Should().Be("5");
+        jwt.Claims.Single(c => c.Type == "employeeId").Value.Should().Be("200");
+        user.CompanyId.Should().Be(1);
+    }
+
     private static CustomerAppUser CreateCustomerAppUser(long? branchId, long? customerId)
     {
         var result = CustomerAppUser.Create(1, branchId, customerId, "customer1", "customer1@mail.com", "hashed-password");

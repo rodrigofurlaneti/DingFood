@@ -6,10 +6,12 @@ using DingFood.Domain.Repositories;
 
 namespace DingFood.Infrastructure.Persistence;
 
-public sealed class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentTenantService? currentTenant = null)
+public sealed partial class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentTenantService? currentTenant = null)
     : DbContext(options), IUnitOfWork
 {
     private readonly ICurrentTenantService? _currentTenant = currentTenant;
+    public DbSet<BusinessGroup> BusinessGroups => Set<BusinessGroup>();
+    public DbSet<AppUserCompany> AppUserCompanies => Set<AppUserCompany>();
     public DbSet<AsaasIntegrationCustomer> AsaasIntegrationCustomers => Set<AsaasIntegrationCustomer>();
     public DbSet<KeetaIntegrationAuthorizationSession> KeetaIntegrationAuthorizationSessions => Set<KeetaIntegrationAuthorizationSession>();
     public DbSet<KeetaIntegrationSetting> KeetaIntegrationSettings => Set<KeetaIntegrationSetting>();
@@ -114,6 +116,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, ICurren
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
         ConfigureCompanyScopedTenantFilters(modelBuilder);
         ConfigureBranchScopedTenantFilters(modelBuilder);
+        ConfigureAdditionalTenantFilters(modelBuilder);
     }
 
     private void ConfigureCompanyScopedTenantFilters(ModelBuilder modelBuilder)

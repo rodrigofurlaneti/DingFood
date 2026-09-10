@@ -32,6 +32,9 @@ builder.Services.AddControllers(options => options.Conventions.Add(new DingFood.
 builder.Services.AddFluentValidationAutoValidation();
 
 ConfigureAuthentication(builder);
+builder.Services.AddAuthorization(options => options.AddPolicy("AppUser", policy => policy
+    .RequireAuthenticatedUser()
+    .RequireAssertion(context => !context.User.IsInRole("Customer") && !context.User.HasClaim(c => c.Type == "customerId"))));
 ConfigureCors(builder);
 ConfigureRateLimiting(builder);
 
@@ -69,6 +72,7 @@ app.UseStaticFiles(); // /uploads/products (imagens do cardapio)
 app.UseCors("Default");
 app.UseRateLimiter();
 app.UseAuthentication();
+app.UseMiddleware<DingFood.API.Middleware.CompanyContextMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions

@@ -34,7 +34,7 @@ public sealed class IfoodMerchantMapping : AggregateRoot
     public Result SetMerchant(string? merchantId, string? merchantUuid)
     {
         MerchantId = merchantId;
-        MerchantUuid = merchantUuid;
+        MerchantUuid = string.IsNullOrWhiteSpace(merchantUuid) ? null : merchantUuid.Trim();
         UpdatedAt = DateTime.Now;
         return Result.Success();
     }

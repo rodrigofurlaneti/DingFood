@@ -1,5 +1,6 @@
 ﻿import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { CompanySelector } from "./CompanySelector";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/authStore";
 import { useThemeStore } from "../stores/themeStore";
@@ -54,6 +55,7 @@ export function AppShell() {
             </a>
 
             <header className="topbar">
+                <CompanySelector />
                 <button
                     type="button"
                     className="nav-toggle"

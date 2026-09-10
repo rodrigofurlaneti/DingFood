@@ -2,4 +2,4 @@
 
 namespace DingFood.Application.Features.Auth.Refresh;
 
-public sealed record RefreshTokenCommand(string RefreshToken) : ICommand<LoginResponse>;
+public sealed record RefreshTokenCommand(string RefreshToken, long? CompanyId = null) : ICommand<LoginResponse>;

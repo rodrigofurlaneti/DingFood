@@ -29,7 +29,8 @@ public static class DependencyInjection
         this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHttpContextAccessor();
-        services.AddScoped<ICurrentTenantService, CurrentTenantService>();
+        services.AddScoped<CurrentTenantService>();
+        services.AddScoped<ICurrentTenantService>(sp => sp.GetRequiredService<CurrentTenantService>());
 
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
@@ -103,6 +104,8 @@ public static class DependencyInjection
         services.AddScoped<ISupplierRepository, SupplierRepository>();
         services.AddScoped<IPurchaseRepository, PurchaseRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
+        services.AddScoped<IBusinessGroupRepository, BusinessGroupRepository>();
+        services.AddScoped<DingFood.Application.Abstractions.Tenancy.ICompanyAccessService, DingFood.Infrastructure.Tenancy.CompanyAccessService>();
         services.AddScoped<IBranchRepository, BranchRepository>();
         services.AddScoped<ITableReservationRepository, TableReservationRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();

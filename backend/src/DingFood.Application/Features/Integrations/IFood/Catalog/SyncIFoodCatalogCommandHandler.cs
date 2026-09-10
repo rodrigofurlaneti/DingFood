@@ -117,6 +117,8 @@ internal sealed class SyncIfoodCatalogCommandHandler : BaseCommandHandler<SyncIf
     {
         var categories = await _categoryRepository.GetByCompanyAsync(companyId, cancellationToken);
         var products = await _productRepository.GetByCompanyAsync(companyId, cancellationToken);
+        if (categories.Any(c => c.CompanyId != companyId) || products.Any(p => p.CompanyId != companyId))
+            throw new DingFood.Domain.Exceptions.TenantAccessException();
         var activeProductIds = products.Select(p => p.Id).ToHashSet();
 
         var (complementGroupsById, complementItemNames, complementGroupIdsByProduct) =

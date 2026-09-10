@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -62,15 +62,18 @@ internal sealed class IfoodReviewWatcherBackgroundService(
     {
         using var scope = serviceProvider.CreateScope();
         var settingRepository = scope.ServiceProvider.GetRequiredService<IIfoodIntegrationSettingRepository>();
-        var mappingRepository = scope.ServiceProvider.GetRequiredService<IIfoodMerchantMappingRepository>();
-        var branchRepository = scope.ServiceProvider.GetRequiredService<IBranchRepository>();
-        var tokenProvider = scope.ServiceProvider.GetRequiredService<IIfoodTokenProvider>();
-        var reviewClient = scope.ServiceProvider.GetRequiredService<IIfoodReviewClient>();
-        var alertStore = scope.ServiceProvider.GetRequiredService<IIfoodOperationalAlertStore>();
 
         var companyIds = await settingRepository.GetEnabledCompanyIdsAsync(stoppingToken);
         foreach (var companyId in companyIds)
         {
+            using var companyScope = serviceProvider.CreateScope();
+            companyScope.ServiceProvider.GetService<DingFood.Infrastructure.Tenancy.CurrentTenantService>()?.SetBackgroundCompany(companyId);
+            var mappingRepository = companyScope.ServiceProvider.GetRequiredService<IIfoodMerchantMappingRepository>();
+            var branchRepository = companyScope.ServiceProvider.GetRequiredService<IBranchRepository>();
+            var tokenProvider = companyScope.ServiceProvider.GetRequiredService<IIfoodTokenProvider>();
+            var reviewClient = companyScope.ServiceProvider.GetRequiredService<IIfoodReviewClient>();
+            var alertStore = companyScope.ServiceProvider.GetRequiredService<IIfoodOperationalAlertStore>();
+
             IReadOnlyDictionary<long, IfoodMerchantMapping> mappings;
             try
             {

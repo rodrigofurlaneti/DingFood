@@ -14,6 +14,7 @@ internal sealed class LoginCommandHandler : BaseCommandHandler<LoginCommand, Log
     private readonly IJwtTokenProvider _jwtTokenProvider;
     private readonly IAccessLogRepository _accessLogRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly DingFood.Application.Abstractions.Tenancy.ICompanyAccessService? _companyAccess;
 
     private static readonly Error InvalidCredentials =
         new("Auth.InvalidCredentials", "Invalid user name or password.");
@@ -26,7 +27,8 @@ internal sealed class LoginCommandHandler : BaseCommandHandler<LoginCommand, Log
         IJwtTokenProvider jwtTokenProvider,
         IAccessLogRepository accessLogRepository,
         ILogTrackerRepository logRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        DingFood.Application.Abstractions.Tenancy.ICompanyAccessService? companyAccess = null)
         : base(logRepository, unitOfWork) // Passa para a base
     {
         // Atribui os campos locais
@@ -36,6 +38,7 @@ internal sealed class LoginCommandHandler : BaseCommandHandler<LoginCommand, Log
         _jwtTokenProvider = jwtTokenProvider;
         _accessLogRepository = accessLogRepository;
         _unitOfWork = unitOfWork;
+        _companyAccess = companyAccess;
     }
 
     public override Task<Result<LoginResponse>> Handle(LoginCommand request, CancellationToken cancellationToken) =>
@@ -72,7 +75,11 @@ internal sealed class LoginCommandHandler : BaseCommandHandler<LoginCommand, Log
 
             var roles = await _userRepository.GetRoleNamesAsync(user.Id, cancellationToken);
             var permissions = await _userRepository.GetPermissionCodesAsync(user.Id, cancellationToken);
-            var accessToken = _jwtTokenProvider.GenerateToken(user, roles, permissions);
+            var company = _companyAccess is null ? null : await _companyAccess.ResolveAsync(user.Id, user.CompanyId, cancellationToken);
+            if (_companyAccess is not null && company is null)
+                return Result.Failure<LoginResponse>(new Error("Company.Forbidden", "Nenhuma empresa ativa autorizada."));
+            var accessToken = company is null ? _jwtTokenProvider.GenerateToken(user, roles, permissions)
+                : _jwtTokenProvider.GenerateCompanyToken(user, company);
 
             var refreshTokenValue = _jwtTokenProvider.GenerateRefreshToken();
             var refreshTokenExpiresAt = DateTime.Now.AddDays(7);
@@ -87,7 +94,7 @@ internal sealed class LoginCommandHandler : BaseCommandHandler<LoginCommand, Log
             return Result.Success(new LoginResponse(
                 accessToken.Token, accessToken.ExpiresAt,
                 refreshTokenValue, refreshTokenExpiresAt,
-                user.UserName, user.CompanyId, user.EmployeeId));
+                user.UserName, user.CompanyId, company is null ? user.EmployeeId : company.EmployeeId, company?.BusinessGroupId, user.CompanyId));
         });
 
     private async Task LogAsync(long? userId, LoginCommand request, string eventType, CancellationToken ct)

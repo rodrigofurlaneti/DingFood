@@ -1,6 +1,6 @@
 ﻿namespace DingFood.Application.Abstractions.Integrations.Ifood;
 
-public sealed record IfoodPollingEvent(string Id, string Code, string? FullCode, string OrderId, DateTime CreatedAt);
+public sealed record IfoodPollingEvent(string Id, string Code, string? FullCode, string OrderId, DateTime CreatedAt, string? MerchantId = null);
 
 // Fase 6a (extensão): opção de complemento selecionada dentro de um item do pedido — Id é o
 // option.id do Ifood, casado contra IfoodComplementMapping.IfoodOptionId (ver

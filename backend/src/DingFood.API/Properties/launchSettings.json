@@ -1,4 +1,7 @@
-{
+﻿{
+  "environmentVariables": {
+    "ConnectionStrings__DefaultConnection": "Server=mysqlazuredb.mysql.database.azure.com;Port=3306;Database=dingfooddb;Uid=mysqlazuredb;Pwd=Mudar@123;SslMode=Required;ConnectionTimeout=60;"
+  },
   "profiles": {
     "SyncBar.API": {
       "commandName": "Project",

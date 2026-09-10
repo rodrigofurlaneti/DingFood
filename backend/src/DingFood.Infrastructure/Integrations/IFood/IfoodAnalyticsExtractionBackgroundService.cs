@@ -40,14 +40,16 @@ internal sealed class IfoodAnalyticsExtractionBackgroundService(
     private async Task ExtractAsync(CancellationToken ct)
     {
         using var scope = scopes.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var settings = scope.ServiceProvider.GetRequiredService<IIfoodIntegrationSettingRepository>();
-        var mappings = scope.ServiceProvider.GetRequiredService<IIfoodMerchantMappingRepository>();
-        var tokens = scope.ServiceProvider.GetRequiredService<IIfoodTokenProvider>();
-        var client = scope.ServiceProvider.GetRequiredService<IIfoodAnalyticsClient>();
         var today = LocalNow(time.GetUtcNow()).Date;
         foreach (var companyId in await settings.GetEnabledCompanyIdsAsync(ct))
         {
+            using var companyScope = scopes.CreateScope();
+            companyScope.ServiceProvider.GetService<DingFood.Infrastructure.Tenancy.CurrentTenantService>()?.SetBackgroundCompany(companyId);
+            var db = companyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var mappings = companyScope.ServiceProvider.GetRequiredService<IIfoodMerchantMappingRepository>();
+            var tokens = companyScope.ServiceProvider.GetRequiredService<IIfoodTokenProvider>();
+            var client = companyScope.ServiceProvider.GetRequiredService<IIfoodAnalyticsClient>();
             var token = await tokens.GetAccessTokenAsync(companyId, ct);
             if (string.IsNullOrWhiteSpace(token)) continue;
             ValidateMerchantScopes(token);

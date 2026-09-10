@@ -12,19 +12,22 @@ internal sealed class RefreshTokenCommandHandler : BaseCommandHandler<RefreshTok
     private readonly IAppUserRepository _userRepository;
     private readonly IJwtTokenProvider _jwtTokenProvider;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly DingFood.Application.Abstractions.Tenancy.ICompanyAccessService? _companyAccess;
 
     public RefreshTokenCommandHandler(
         IRefreshTokenRepository refreshTokenRepository,
         IAppUserRepository userRepository,
         IJwtTokenProvider jwtTokenProvider,
         ILogTrackerRepository logRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        DingFood.Application.Abstractions.Tenancy.ICompanyAccessService? companyAccess = null)
         : base(logRepository, unitOfWork)
     {
         _refreshTokenRepository = refreshTokenRepository;
         _userRepository = userRepository;
         _jwtTokenProvider = jwtTokenProvider;
         _unitOfWork = unitOfWork;
+        _companyAccess = companyAccess;
     }
 
     public override Task<Result<LoginResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken) =>
@@ -42,11 +45,15 @@ internal sealed class RefreshTokenCommandHandler : BaseCommandHandler<RefreshTok
 
             userIdBox.Value = user.Id;
 
+            var company = _companyAccess is null ? null : await _companyAccess.ResolveAsync(user.Id, request.CompanyId ?? user.CompanyId, cancellationToken);
+            if (_companyAccess is not null && company is null)
+                return Result.Failure<LoginResponse>(new Error("Company.Forbidden", "Empresa não autorizada."));
             stored.Revoke();
 
             var roles = await _userRepository.GetRoleNamesAsync(user.Id, cancellationToken);
             var permissions = await _userRepository.GetPermissionCodesAsync(user.Id, cancellationToken);
-            var accessToken = _jwtTokenProvider.GenerateToken(user, roles, permissions);
+            var accessToken = company is null ? _jwtTokenProvider.GenerateToken(user, roles, permissions)
+                : _jwtTokenProvider.GenerateCompanyToken(user, company);
 
             var newTokenValue = _jwtTokenProvider.GenerateRefreshToken();
             var newTokenExpiresAt = DateTime.Now.AddDays(7);
@@ -60,6 +67,7 @@ internal sealed class RefreshTokenCommandHandler : BaseCommandHandler<RefreshTok
             return Result.Success(new LoginResponse(
                 accessToken.Token, accessToken.ExpiresAt,
                 newTokenValue, newTokenExpiresAt,
-                user.UserName, user.CompanyId, user.EmployeeId));
+                user.UserName, company?.CompanyId ?? user.CompanyId, company is null ? user.EmployeeId : company.EmployeeId,
+                company?.BusinessGroupId, user.CompanyId));
         });
 }
