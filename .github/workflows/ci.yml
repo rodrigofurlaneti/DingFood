@@ -205,7 +205,7 @@ jobs:
           context: ./backend/src
           file: ./backend/src/Dockerfile
           push: false
-          tags: syncbar-api:ci
+          tags: dingfood-api:ci
 
       - name: Build imagem do frontend
         uses: docker/build-push-action@v6
@@ -213,4 +213,4 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: false
-          tags: syncbar-frontend:ci
+          tags: dingfood-frontend:ci

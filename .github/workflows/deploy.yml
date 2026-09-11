@@ -17,7 +17,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: rodrigofurlaneti/syncbar
+  IMAGE_NAME: rodrigofurlaneti/dingfood
 
 jobs:
 

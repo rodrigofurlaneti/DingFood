@@ -17,9 +17,11 @@ Em Settings → Secrets and variables → Actions, configure os mesmos valores u
 | `GHCR_PAT` | Token para baixar as imagens privadas na VM |
 | `SONAR_TOKEN` | Opcional: habilita a análise SonarCloud |
 
-`GITHUB_TOKEN` é fornecido pelo GitHub. Os pacotes existentes `syncbar-api` e `syncbar-frontend` precisam permitir publicação pelo repositório DingFood em suas configurações de acesso ao GitHub Actions.
+`GITHUB_TOKEN` é fornecido pelo GitHub, com `packages: write` no job de publicação. As imagens agora usam pacotes próprios: `dingfood-api` e `dingfood-frontend`. Isso evita depender da permissão de escrita dos pacotes `syncbar-*` vinculados ao repositório anterior. O `GHCR_PAT` usado pela VM deve ter `read:packages` e acesso aos novos pacotes privados.
 
-Foram preservados os nomes das imagens `ghcr.io/rodrigofurlaneti/syncbar-api` e `syncbar-frontend`, o diretório `/opt/syncbarservice`, os volumes existentes e os arquivos de HTTPS, conforme o Compose operacional. O script HTTPS ainda utiliza o IP `9.205.156.87`. A VM deve manter o `.env` com a conexão MySQL e os segredos já usados; esses valores não são copiados pelo workflow.
+O workflow e o Compose usam `ghcr.io/rodrigofurlaneti/dingfood-api:latest` e `ghcr.io/rodrigofurlaneti/dingfood-frontend:latest`. Foram preservados o diretório `/opt/syncbarservice`, os serviços, os volumes existentes e os arquivos de HTTPS. O script HTTPS ainda utiliza o IP `9.205.156.87`. A VM deve manter o `.env` com a conexão MySQL e os segredos já usados; esses valores não são copiados pelo workflow.
+
+Se ocorrer `permission_denied: write_package` em um pacote que já exista, confira Package settings → Manage Actions access e conceda Write ao repositório DingFood. Referência: [permissões de publicação do GitHub Packages](https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions).
 
 O Sonar mantém como padrão o projeto anterior `rodrigofurlaneti_SyncBar`. Para usar outro projeto, configure as variáveis `SONAR_PROJECT_KEY` e `SONAR_ORGANIZATION`. A cobertura gera Cobertura e OpenCover; o scanner C# importa OpenCover.
 

@@ -1,6 +1,6 @@
-﻿services:
+services:
   api:
-    image: ghcr.io/rodrigofurlaneti/syncbar-api:latest
+    image: ghcr.io/rodrigofurlaneti/dingfood-api:latest
     pull_policy: always 
     restart: unless-stopped
     environment:
@@ -24,7 +24,7 @@
       - syncbar-whatsapp-outbox:/app/data/whatsapp-outbox
 
   frontend:
-    image: ghcr.io/rodrigofurlaneti/syncbar-frontend:latest
+    image: ghcr.io/rodrigofurlaneti/dingfood-frontend:latest
     pull_policy: always 
     restart: unless-stopped
     depends_on:
