@@ -13,6 +13,28 @@ namespace DingFood.Tests.Infrastructure.Integrations.IFood;
 
 public sealed class IfoodTokenProviderTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OtherBrandSettingMustNotBeDecryptedOrAuthenticated(bool withStopwatch)
+    {
+        var tenant = Substitute.For<DingFood.Application.Abstractions.Tenancy.ICurrentTenantService>();
+        tenant.CompanyId.Returns(1L);
+        tenant.BrandId.Returns(2L);
+        _settingRepository.GetByCompanyAsync(1, Arg.Any<CancellationToken>()).Returns(EnabledSetting());
+        _cache.Set("Ifood:token:1:brand:2", "stale-token");
+        var provider = new IfoodTokenProvider(_cache, _settingRepository, _secretProtector,
+            _authClient, _logRepository, _unitOfWork, tenant);
+
+        var token = withStopwatch ? await provider.GetAccessTokenAsync(1, Stopwatch.StartNew())
+            : await provider.GetAccessTokenAsync(1);
+
+        token.Should().BeNull();
+        _secretProtector.DidNotReceive().Unprotect(Arg.Any<string>(), Arg.Any<string>());
+        await _authClient.DidNotReceive().AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await _logRepository.DidNotReceive().AddAsync(Arg.Any<LogTracker>(), Arg.Any<CancellationToken>());
+    }
+
     private readonly IMemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
     private readonly IIfoodIntegrationSettingRepository _settingRepository = Substitute.For<IIfoodIntegrationSettingRepository>();
     private readonly ISecretProtector _secretProtector = Substitute.For<ISecretProtector>();
@@ -59,14 +81,15 @@ public sealed class IfoodTokenProviderTests
     }
 
     [Fact]
-    public async Task GetAccessTokenAsync_CachedToken_ShouldReturnCachedWithoutCallingRepositoryOrAuthClient()
+    public async Task GetAccessTokenAsync_CachedToken_ShouldCheckSettingBeforeReturningCached()
     {
+        _settingRepository.GetByCompanyAsync(1, Arg.Any<CancellationToken>()).Returns(EnabledSetting());
         _cache.Set("Ifood:token:1:brand:", "cached-token");
 
         var token = await _provider.GetAccessTokenAsync(1, CancellationToken.None);
 
         token.Should().Be("cached-token");
-        await _settingRepository.DidNotReceive().GetByCompanyAsync(Arg.Any<long>(), Arg.Any<CancellationToken>());
+        await _settingRepository.Received(1).GetByCompanyAsync(Arg.Any<long>(), Arg.Any<CancellationToken>());
         await _authClient.DidNotReceive().AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
@@ -89,6 +112,7 @@ public sealed class IfoodTokenProviderTests
     {
         var setting = IfoodIntegrationSetting.Create(1).Value;
         setting.SaveCredentials("client-1", "encrypted", enabled: false, ifoodCustomerId: null);
+        _cache.Set("Ifood:token:1:brand:", "stale-token");
         _settingRepository.GetByCompanyAsync(1, Arg.Any<CancellationToken>()).Returns(setting);
 
         var token = withStopwatch ? await _provider.GetAccessTokenAsync(1, Stopwatch.StartNew(), CancellationToken.None)
@@ -170,6 +194,7 @@ public sealed class IfoodTokenProviderTests
     [Fact]
     public async Task Invalidate_ShouldRemoveCachedTokenForCompany()
     {
+        _settingRepository.GetByCompanyAsync(1, Arg.Any<CancellationToken>()).Returns(EnabledSetting());
         _cache.Set("Ifood:token:1:brand:", "cached-token");
 
         _provider.Invalidate(1);
@@ -219,6 +244,7 @@ public sealed class IfoodTokenProviderTests
     [Fact]
     public async Task GetAccessTokenAsync_WithStopwatch_CachedToken_ShouldReturnCached()
     {
+        _settingRepository.GetByCompanyAsync(1, Arg.Any<CancellationToken>()).Returns(EnabledSetting());
         _cache.Set("Ifood:token:1:brand:", "cached-token");
         var stopwatch = Stopwatch.StartNew();
 
