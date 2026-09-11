@@ -1,9 +1,10 @@
-services:
+﻿services:
   api:
     image: ghcr.io/rodrigofurlaneti/dingfood-api:latest
     pull_policy: always 
     restart: unless-stopped
     environment:
+      Delivery__GoogleMapsApiKey: "${Delivery__GoogleMapsApiKey}"  
       ASPNETCORE_ENVIRONMENT: "Production"
       ConnectionStrings__DefaultConnection: "${MYSQL_CONNECTION_STRING}"
       Jwt__Secret: "${Jwt__Secret}"
