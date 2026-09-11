@@ -9,6 +9,7 @@ public sealed record UpdateWorkplaceAccess(long AppUserId, long BranchId, long? 
 
 public interface IWorkplaceAccessService
 {
+    Task<WorkplaceAccess?> ResolveAsync(long userId, long companyId, long? branchId, CancellationToken ct);
     Task<IReadOnlyCollection<BrandOption>> GetBrandsAsync(long userId, long companyId, CancellationToken ct);
     Task<IReadOnlyCollection<WorkplaceAccess>> GetAllowedAsync(long userId, long companyId, CancellationToken ct);
     Task<Result<long>> CreateAsync(long userId, long companyId, CreateWorkplace request, CancellationToken ct);

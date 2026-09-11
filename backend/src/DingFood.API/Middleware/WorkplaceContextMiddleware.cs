@@ -18,10 +18,14 @@ public sealed class WorkplaceContextMiddleware(RequestDelegate next)
         var path = context.Request.Path.Value?.TrimEnd('/').ToLowerInvariant();
         if (path is "/api/companies/allowed" or "/api/companies/switch" or "/api/workplaces")
         { await next(context); return; }
-        var allowed = await workplaces.GetAllowedAsync(userId, companyId, context.RequestAborted);
         var header = context.Request.Headers["X-Branch-Id"].FirstOrDefault();
-        WorkplaceAccess? workplace = header is null ? allowed.FirstOrDefault() :
-            long.TryParse(header, out var branchId) ? allowed.SingleOrDefault(b => b.Id == branchId) : null;
+        long? branchId = null;
+        if (header is not null)
+        {
+            if (!long.TryParse(header, out var parsed) || parsed <= 0) { context.Response.StatusCode = 403; return; }
+            branchId = parsed;
+        }
+        var workplace = await workplaces.ResolveAsync(userId, companyId, branchId, context.RequestAborted);
         if (workplace is null) { context.Response.StatusCode = 403; return; }
         var identity = new ClaimsIdentity(context.User.Identity as ClaimsIdentity);
         foreach (var claim in identity.Claims.Where(c => c.Type is "branchId" or "brandId" or "employeeId" or "permission" || c.Type == ClaimTypes.Role).ToArray()) identity.RemoveClaim(claim);

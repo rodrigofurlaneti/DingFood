@@ -1,0 +1,19 @@
+.own-delivery.own-delivery { padding: 22px; gap: 18px; }
+.own-delivery header h1.display { font-size: 1.7rem; }
+.own-delivery header p { font-size: .9rem; color: var(--ink-faint); margin: 4px 0 10px; }
+.own-delivery header a { font-size: .9rem; }
+.own-delivery section h2.display { font-size: 1.25rem; }
+.own-delivery .delivery-tabs { gap: 4px; border-bottom: 1px solid var(--line-soft); }
+.own-delivery .delivery-tabs button {
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px 16px; border: none; border-bottom: 2px solid transparent;
+    background: transparent; color: var(--ink-faint); font-size: .92rem; font-weight: 500;
+    transition: color var(--duration-base) var(--ease-standard), border-color var(--duration-base) var(--ease-standard);
+}
+.own-delivery .delivery-tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--amber); font-weight: 700; }
+.own-delivery .delivery-tabs button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.own-delivery section[hidden] { display: none; }
+@media (max-width: 600px) {
+    .own-delivery.own-delivery { padding: 12px; }
+    .own-delivery .delivery-tabs button { padding: 10px 12px; }
+}

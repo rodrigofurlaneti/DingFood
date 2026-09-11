@@ -25,12 +25,14 @@ public sealed class WorkplaceContextMiddlewareTests
             new Claim(ClaimTypes.Role, "Administrador"), new Claim("employeeId", "999")], "test"));
         if (header is not null) http.Request.Headers["X-Branch-Id"] = header;
         var access = Substitute.For<IWorkplaceAccessService>();
-        access.GetAllowedAsync(7, 1, Arg.Any<CancellationToken>()).Returns(new[] {
-            new WorkplaceAccess(10, "Centro", true, 5, "Burger", 100, ["Garçom"], []) });
+        var workplace = new WorkplaceAccess(10, "Centro", true, 5, "Burger", 100, ["Garçom"], []);
+        access.ResolveAsync(7, 1, 10, Arg.Any<CancellationToken>()).Returns(workplace);
+        access.ResolveAsync(7, 1, null, Arg.Any<CancellationToken>()).Returns(workplace);
         var called = false;
         var middleware = new WorkplaceContextMiddleware(_ => { called = true; return Task.CompletedTask; });
         await middleware.InvokeAsync(http, access);
         called.Should().Be(expected);
+        await access.DidNotReceive().GetAllowedAsync(Arg.Any<long>(), Arg.Any<long>(), Arg.Any<CancellationToken>());
         if (!expected) { http.Response.StatusCode.Should().Be(403); return; }
         http.User.FindFirstValue("branchId").Should().Be("10");
         http.User.FindFirstValue("brandId").Should().Be("5");
@@ -47,7 +49,7 @@ public sealed class WorkplaceContextMiddlewareTests
         http.Request.Headers["X-Branch-Id"] = "10";
         http.User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "7"), new Claim("companyId", "1")], "test"));
         var access = Substitute.For<IWorkplaceAccessService>();
-        access.GetAllowedAsync(7, 1, Arg.Any<CancellationToken>()).Returns(Array.Empty<WorkplaceAccess>());
+        access.ResolveAsync(7, 1, 10, Arg.Any<CancellationToken>()).Returns((WorkplaceAccess?)null);
         var called = false;
         await new WorkplaceContextMiddleware(_ => { called = true; return Task.CompletedTask; }).InvokeAsync(http, access);
         called.Should().BeFalse(); http.Response.StatusCode.Should().Be(403);

@@ -8,31 +8,50 @@ namespace DingFood.Infrastructure.Tenancy;
 
 internal sealed class WorkplaceAccessService(AppDbContext db, DbContextOptions<AppDbContext> options, ICompanyAccessService companies) : IWorkplaceAccessService
 {
-    public async Task<IReadOnlyCollection<WorkplaceAccess>> GetAllowedAsync(long userId, long companyId, CancellationToken ct)
+    public Task<IReadOnlyCollection<WorkplaceAccess>> GetAllowedAsync(long userId, long companyId, CancellationToken ct)
+        => LoadAsync(userId, companyId, null, false, ct);
+
+    public async Task<WorkplaceAccess?> ResolveAsync(long userId, long companyId, long? branchId, CancellationToken ct)
+        => (await LoadAsync(userId, companyId, branchId, true, ct)).SingleOrDefault();
+
+    private async Task<IReadOnlyCollection<WorkplaceAccess>> LoadAsync(long userId, long companyId, long? branchId, bool single, CancellationToken ct)
     {
-        if (await companies.ResolveAsync(userId, companyId, ct) is null) return [];
-        var allowed = await (from grant in db.Set<AppUserBranch>().IgnoreQueryFilters().AsNoTracking()
+        // Validate membership in SQL without loading company-wide roles that the branch replaces.
+        // No authorization cache: revoked grants and inactive organizations take effect immediately.
+        var query = from grant in db.Set<AppUserBranch>().IgnoreQueryFilters().AsNoTracking()
             join branch in db.Branchs.IgnoreQueryFilters() on grant.BranchId equals branch.Id
             join brand in db.Set<Brand>().IgnoreQueryFilters() on branch.BrandId equals brand.Id
-            where grant.AppUserId == userId && grant.IsActive && branch.CompanyId == companyId && branch.IsActive && brand.IsActive &&
+            join company in db.Companies.IgnoreQueryFilters() on branch.CompanyId equals company.Id
+            join membership in db.AppUserCompanies.IgnoreQueryFilters() on company.Id equals membership.CompanyId
+            join user in db.AppUsers.IgnoreQueryFilters() on membership.AppUserId equals user.Id
+            join home in db.Companies.IgnoreQueryFilters() on user.CompanyId equals home.Id
+            where grant.AppUserId == userId && user.Id == userId && user.IsActive && home.IsActive && membership.IsActive &&
+                company.IsActive && company.BusinessGroup.IsActive && company.BusinessGroupId == home.BusinessGroupId &&
+                grant.IsActive && branch.CompanyId == companyId && branch.IsActive && brand.IsActive &&
+                (!branchId.HasValue || branch.Id == branchId) &&
                 db.Set<CompanyBrand>().IgnoreQueryFilters().Any(link => link.CompanyId == companyId && link.BrandId == brand.Id && link.IsActive)
-            orderby brand.Name, branch.Name
-            select new WorkplaceAccess(branch.Id, branch.Name, branch.IsActive, brand.Id, brand.Name, grant.EmployeeId, null, null)).ToListAsync(ct);
-        var result = new List<WorkplaceAccess>();
-        foreach (var workplace in allowed)
-        {
-            var grant = await db.Set<AppUserBranch>().IgnoreQueryFilters().SingleAsync(g => g.AppUserId == userId && g.BranchId == workplace.Id, ct);
-            var roles = await db.Roles.IgnoreQueryFilters().Where(r => r.CompanyId == companyId && r.IsActive &&
-                (grant.UsesLegacyRoles ? db.UserRoles.IgnoreQueryFilters().Any(ur => ur.AppUserId == userId && ur.CompanyId == companyId && ur.RoleId == r.Id && ur.IsActive) : r.Id == grant.RoleId))
-                .Select(r => new { r.Id, r.Name }).ToArrayAsync(ct);
-            var roleNames = roles.Select(r => r.Name).ToArray();
-            var roleIds = roles.Select(r => r.Id).ToArray();
-            var permissions = await db.RolePermissions.IgnoreQueryFilters().Where(r => roleIds.Contains(r.RoleId) && r.IsActive)
-                .Join(db.Permissions, r => r.PermissionId, p => p.Id, (r, p) => p.Code).ToArrayAsync(ct);
-            var employeeId = workplace.EmployeeId.HasValue && await db.Employees.IgnoreQueryFilters().AnyAsync(e => e.Id == workplace.EmployeeId && e.BranchId == workplace.Id && e.IsActive, ct) ? workplace.EmployeeId : null;
-            result.Add(workplace with { EmployeeId = employeeId, Roles = roleNames, Permissions = permissions });
-        }
-        return result;
+            orderby brand.Name, branch.Name, branch.Id
+            select new {
+                branch.Id, branch.Name, branch.IsActive, BrandId = brand.Id, BrandName = brand.Name,
+                grant.RoleId, grant.UsesLegacyRoles,
+                EmployeeId = db.Employees.IgnoreQueryFilters().Where(e => e.Id == grant.EmployeeId && e.BranchId == branch.Id && e.IsActive).Select(e => (long?)e.Id).FirstOrDefault()
+            };
+        var allowed = await (single ? query.Take(1) : query).ToListAsync(ct);
+        if (allowed.Count == 0) return [];
+        var explicitRoles = allowed.Where(g => !g.UsesLegacyRoles && g.RoleId.HasValue).Select(g => g.RoleId!.Value).Distinct().ToArray();
+        var needsLegacy = allowed.Any(g => g.UsesLegacyRoles);
+        var roles = await db.Roles.IgnoreQueryFilters().AsNoTracking().Where(r => r.CompanyId == companyId && r.IsActive)
+            .Select(r => new { r.Id, r.Name, Legacy = needsLegacy && db.UserRoles.IgnoreQueryFilters().Any(ur => ur.AppUserId == userId && ur.CompanyId == companyId && ur.RoleId == r.Id && ur.IsActive) })
+            .Where(r => explicitRoles.Contains(r.Id) || r.Legacy).ToListAsync(ct);
+        var roleIds = roles.Select(r => r.Id).ToArray();
+        var permissions = await db.RolePermissions.IgnoreQueryFilters().AsNoTracking().Where(r => roleIds.Contains(r.RoleId) && r.IsActive)
+            .Join(db.Permissions.Where(p => p.IsActive), r => r.PermissionId, p => p.Id, (r, p) => new { r.RoleId, p.Code }).ToListAsync(ct);
+        return allowed.Select(g => {
+            var assignedRoles = roles.Where(r => g.UsesLegacyRoles ? r.Legacy : r.Id == g.RoleId).ToArray();
+            var assignedIds = assignedRoles.Select(r => r.Id).ToHashSet();
+            return new WorkplaceAccess(g.Id, g.Name, g.IsActive, g.BrandId, g.BrandName, g.EmployeeId,
+                assignedRoles.Select(r => r.Name).Distinct().ToArray(), permissions.Where(p => assignedIds.Contains(p.RoleId)).Select(p => p.Code).Distinct().ToArray());
+        }).ToArray();
     }
 
     public async Task<IReadOnlyCollection<BrandOption>> GetBrandsAsync(long userId, long companyId, CancellationToken ct)

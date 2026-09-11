@@ -71,27 +71,33 @@ public sealed class IfoodTokenProviderTests
     }
 
     [Fact]
-    public async Task GetAccessTokenAsync_NoSetting_ShouldReturnNullAndLogFailure()
+    public async Task GetAccessTokenAsync_NoSetting_ShouldReturnNullWithoutWritingError()
     {
         _settingRepository.GetByCompanyAsync(1, Arg.Any<CancellationToken>()).Returns((IfoodIntegrationSetting?)null);
 
         var token = await _provider.GetAccessTokenAsync(1, CancellationToken.None);
 
         token.Should().BeNull();
-        await _logRepository.Received(1).AddAsync(Arg.Is<LogTracker>(l => !l.IsSuccess), Arg.Any<CancellationToken>());
-        await _unitOfWork.Received(1).CommitAsync(Arg.Any<CancellationToken>());
+        await _logRepository.DidNotReceive().AddAsync(Arg.Any<LogTracker>(), Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().CommitAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public async Task GetAccessTokenAsync_SettingDisabled_ShouldReturnNull()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task GetAccessTokenAsync_SettingDisabled_ShouldReturnNull(bool withStopwatch)
     {
         var setting = IfoodIntegrationSetting.Create(1).Value;
         setting.SaveCredentials("client-1", "encrypted", enabled: false, ifoodCustomerId: null);
         _settingRepository.GetByCompanyAsync(1, Arg.Any<CancellationToken>()).Returns(setting);
 
-        var token = await _provider.GetAccessTokenAsync(1, CancellationToken.None);
+        var token = withStopwatch ? await _provider.GetAccessTokenAsync(1, Stopwatch.StartNew(), CancellationToken.None)
+            : await _provider.GetAccessTokenAsync(1, CancellationToken.None);
 
         token.Should().BeNull();
+        await _logRepository.DidNotReceive().AddAsync(Arg.Any<LogTracker>(), Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().CommitAsync(Arg.Any<CancellationToken>());
+        await _authClient.DidNotReceive().AuthenticateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -104,6 +110,8 @@ public sealed class IfoodTokenProviderTests
         var token = await _provider.GetAccessTokenAsync(1, CancellationToken.None);
 
         token.Should().BeNull();
+        await _logRepository.Received(1).AddAsync(Arg.Is<LogTracker>(l => !l.IsSuccess &&
+            l.ErrorMessage!.Contains("CompanyId=1") && l.ErrorMessage.Contains("ClientId ausente=True") && !l.ErrorMessage.Contains("encrypted")), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -170,7 +178,7 @@ public sealed class IfoodTokenProviderTests
     }
 
     [Fact]
-    public async Task GetAccessTokenAsync_WithStopwatch_NoSetting_ShouldLogElapsedMillisecondsAndReturnNull()
+    public async Task GetAccessTokenAsync_WithStopwatch_NoSetting_ShouldNotWriteError()
     {
         var stopwatch = Stopwatch.StartNew();
         _settingRepository.GetByCompanyAsync(1, Arg.Any<CancellationToken>()).Returns((IfoodIntegrationSetting?)null);
@@ -178,7 +186,8 @@ public sealed class IfoodTokenProviderTests
         var token = await _provider.GetAccessTokenAsync(1, stopwatch, CancellationToken.None);
 
         token.Should().BeNull();
-        await _logRepository.Received(1).AddAsync(Arg.Is<LogTracker>(l => l.ExecutionTimeMs == stopwatch.ElapsedMilliseconds || l.ExecutionTimeMs >= 0), Arg.Any<CancellationToken>());
+        await _logRepository.DidNotReceive().AddAsync(Arg.Any<LogTracker>(), Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().CommitAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

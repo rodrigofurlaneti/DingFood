@@ -27,7 +27,8 @@ internal sealed class IfoodTokenProvider(
             return cached;
 
         var setting = await settingRepository.GetByCompanyAsync(companyId, cancellationToken);
-        if (setting is null || !setting.Enabled || setting.ClientId is null || setting.ClientSecretEncrypted is null)
+        if (setting is null || !setting.Enabled) return null;
+        if (string.IsNullOrWhiteSpace(setting.ClientId) || string.IsNullOrWhiteSpace(setting.ClientSecretEncrypted))
         {
             var log = new LogTracker(0)
             {
@@ -37,7 +38,7 @@ internal sealed class IfoodTokenProvider(
                 MethodName = nameof(GetAccessTokenAsync),
                 IsSuccess = false,
                 ExecutionTimeMs = 0,
-                ErrorMessage = "Setting is null or not enabled or ClientId is null or ClientSecretEncrypted is null.",
+                ErrorMessage = $"iFood habilitado com credenciais incompletas. CompanyId={companyId}; BrandId={tenant?.BrandId}; ClientId ausente={string.IsNullOrWhiteSpace(setting.ClientId)}; ClientSecret ausente={string.IsNullOrWhiteSpace(setting.ClientSecretEncrypted)}.",
                 StackTrace = string.Empty,
                 IpAddress = null,
                 CreatedAt = DateTime.Now,
@@ -91,7 +92,8 @@ internal sealed class IfoodTokenProvider(
             return cached;
 
         var setting = await settingRepository.GetByCompanyAsync(companyId, cancellationToken);
-        if (setting is null || !setting.Enabled || setting.ClientId is null || setting.ClientSecretEncrypted is null)
+        if (setting is null || !setting.Enabled) return null;
+        if (string.IsNullOrWhiteSpace(setting.ClientId) || string.IsNullOrWhiteSpace(setting.ClientSecretEncrypted))
         {
             var log = new LogTracker(0)
             {
@@ -101,7 +103,7 @@ internal sealed class IfoodTokenProvider(
                 MethodName = nameof(GetAccessTokenAsync),
                 IsSuccess = false,
                 ExecutionTimeMs = stopwatch.ElapsedMilliseconds,
-                ErrorMessage = "Setting is null or not enabled or ClientId is null or ClientSecretEncrypted is null.",
+                ErrorMessage = $"iFood habilitado com credenciais incompletas. CompanyId={companyId}; BrandId={tenant?.BrandId}; ClientId ausente={string.IsNullOrWhiteSpace(setting.ClientId)}; ClientSecret ausente={string.IsNullOrWhiteSpace(setting.ClientSecretEncrypted)}.",
                 StackTrace = string.Empty,
                 IpAddress = null,
                 CreatedAt = DateTime.Now,

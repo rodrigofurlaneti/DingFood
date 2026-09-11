@@ -7,6 +7,8 @@ using DingFood.Tests.Infrastructure.Persistence.Repositories;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using System.Data.Common;
 using Xunit;
 
 namespace DingFood.Tests.Infrastructure.Persistence;
@@ -154,5 +156,61 @@ public sealed class BrandWorkplaceIsolationTests : RepositoryTestBase
             e.GetProperties().Select(p => e.GetTableName()!.ToLowerInvariant() + "." + p.GetColumnName(Microsoft.EntityFrameworkCore.Metadata.StoreObjectIdentifier.Table(e.GetTableName()!, e.GetSchema())))));
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(10)]
+    public async Task AuthorizationQueryCountDoesNotGrowWithBranchCount(int extraBranches)
+    {
+        var (company, a, _, admin) = await SeedAsync();
+        for (var i = 0; i < extraBranches; i++)
+        {
+            var branch = Branch.Create(company.Id, $"Extra {i}", null, null, null, null, null, null, null, null).Value;
+            Context.Entry(branch).Property(nameof(Branch.BrandId)).CurrentValue = a.BrandId;
+            Context.Add(branch); await Context.SaveChangesAsync();
+            Context.Add(AppUserBranch.Create(admin.Id, branch.Id)); await Context.SaveChangesAsync();
+        }
+        var counter = new QueryCounter();
+        var options = new DbContextOptionsBuilder<AppDbContext>(Options).AddInterceptors(counter).Options;
+        using var db = new AppDbContext(options);
+        var service = new WorkplaceAccessService(db, options, new CompanyAccessService(db));
+        var selected = await service.ResolveAsync(admin.Id, company.Id, a.Id, default);
+        selected.Should().NotBeNull(); selected!.Id.Should().Be(a.Id);
+        counter.Count.Should().Be(3, "selected-branch authorization must have a fixed query budget");
+        counter.Count = 0;
+        (await service.GetAllowedAsync(admin.Id, company.Id, default)).Should().HaveCount(2 + extraBranches);
+        counter.Count.Should().Be(3, "the branch selector must batch roles and permissions");
+    }
+
+    [Fact]
+    public async Task SelectedAuthorizationKeepsBranchRolesSeparateAndHonorsRevocation()
+    {
+        var (company, a, b, admin) = await SeedAsync();
+        var waiter = Role.Create(company.Id, "Garçom", null).Value;
+        var permission = Permission.Create("Orders.Read", "Read", "Orders").Value;
+        Context.AddRange(waiter, permission); await Context.SaveChangesAsync();
+        Context.Add(RolePermission.Create(waiter.Id, permission.Id).Value);
+        var grant = await Context.Set<AppUserBranch>().SingleAsync(g => g.AppUserId == admin.Id && g.BranchId == b.Id);
+        grant.Update(null, true, waiter.Id); await Context.SaveChangesAsync();
+        var service = new WorkplaceAccessService(Context, Options, new CompanyAccessService(Context));
+        (await service.ResolveAsync(admin.Id, company.Id, a.Id, default))!.Roles.Should().Contain("Administrador");
+        var selected = await service.ResolveAsync(admin.Id, company.Id, b.Id, default);
+        selected!.Roles.Should().Equal("Garçom"); selected.Permissions.Should().Equal("Orders.Read");
+        (await service.ResolveAsync(admin.Id, company.Id, long.MaxValue, default)).Should().BeNull();
+        permission.Deactivate(); await Context.SaveChangesAsync();
+        (await service.ResolveAsync(admin.Id, company.Id, b.Id, default))!.Permissions.Should().BeEmpty();
+        grant.Update(null, false, waiter.Id); await Context.SaveChangesAsync();
+        (await service.ResolveAsync(admin.Id, company.Id, b.Id, default)).Should().BeNull();
+        var membership = await Context.AppUserCompanies.SingleAsync(x => x.AppUserId == admin.Id && x.CompanyId == company.Id);
+        membership.Revoke(); await Context.SaveChangesAsync();
+        (await service.ResolveAsync(admin.Id, company.Id, a.Id, default)).Should().BeNull();
+    }
+
+    private sealed class QueryCounter : DbCommandInterceptor
+    {
+        public int Count { get; set; }
+        public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData,
+            InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
+        { Count++; return ValueTask.FromResult(result); }
+    }
     private sealed record Scope(long? CompanyId, long? BrandId, long? BranchId) : ICurrentTenantService;
 }
