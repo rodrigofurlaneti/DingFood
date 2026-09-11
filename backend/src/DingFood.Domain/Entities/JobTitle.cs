@@ -1,10 +1,11 @@
-﻿using DingFood.Domain.Primitives;
+using DingFood.Domain.Primitives;
 
 namespace DingFood.Domain.Entities;
 
 public sealed class JobTitle : AggregateRoot
 {
     public long CompanyId { get; private set; }
+    public long? BrandId { get; private set; }
     public string Name { get; private set; } = null!;
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }

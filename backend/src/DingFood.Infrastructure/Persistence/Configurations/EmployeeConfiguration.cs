@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using DingFood.Domain.Entities;
 
@@ -25,7 +25,7 @@ internal sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         
         builder.HasIndex(x => x.BranchId).HasDatabaseName("IX_Employee_BranchId");
         builder.HasIndex(x => x.JobTitleId).HasDatabaseName("IX_Employee_JobTitleId");
-        builder.HasIndex(x => x.Cpf).IsUnique().HasFilter("[IsActive] = 1").HasDatabaseName("UQ_Employee_Cpf");
+        builder.HasIndex(x => new { x.BranchId, x.Cpf }).IsUnique().HasFilter("[IsActive] = 1").HasDatabaseName("UQ_Employee_Cpf");
         
         builder.HasOne<Branch>().WithMany().HasForeignKey(x => x.BranchId).HasConstraintName("FK_Employee_Branch").OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<JobTitle>().WithMany().HasForeignKey(x => x.JobTitleId).HasConstraintName("FK_Employee_JobTitle").OnDelete(DeleteBehavior.Restrict);

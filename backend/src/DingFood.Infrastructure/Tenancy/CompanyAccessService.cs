@@ -35,11 +35,12 @@ internal sealed class CompanyAccessService(AppDbContext db) : ICompanyAccessServ
             if (employeeId.HasValue && !await db.Employees.IgnoreQueryFilters().AnyAsync(e => e.Id == employeeId && e.IsActive &&
                 db.Branchs.IgnoreQueryFilters().Any(b => b.Id == e.BranchId && b.CompanyId == company.Id && b.IsActive), ct))
                 employeeId = null;
-            var roles = await db.UserRoles.IgnoreQueryFilters().AsNoTracking()
-                .Where(x => x.AppUserId == userId && x.CompanyId == company.Id && x.IsActive)
-                .Join(db.Roles.IgnoreQueryFilters().Where(x => x.CompanyId == company.Id && x.IsActive),
-                    x => x.RoleId, x => x.Id, (link, role) => role).ToListAsync(ct);
-            var roleIds = roles.Select(x => x.Id).ToArray();
+            var roles = await db.Roles.IgnoreQueryFilters().AsNoTracking()
+                .Where(r => r.CompanyId == company.Id && r.IsActive && (
+                    db.UserRoles.IgnoreQueryFilters().Any(ur => ur.RoleId == r.Id && ur.AppUserId == userId && ur.CompanyId == company.Id && ur.IsActive) ||
+                    db.Set<DingFood.Domain.Entities.AppUserBranch>().IgnoreQueryFilters().Any(g => g.AppUserId == userId && g.RoleId == r.Id && g.IsActive &&
+                        db.Branchs.IgnoreQueryFilters().Any(b => b.Id == g.BranchId && b.CompanyId == company.Id && b.IsActive))))
+                .ToListAsync(ct);            var roleIds = roles.Select(x => x.Id).ToArray();
             var permissions = await db.RolePermissions.AsNoTracking()
                 .Where(x => roleIds.Contains(x.RoleId) && x.IsActive)
                 .Join(db.Permissions.Where(x => x.IsActive), x => x.PermissionId, x => x.Id,

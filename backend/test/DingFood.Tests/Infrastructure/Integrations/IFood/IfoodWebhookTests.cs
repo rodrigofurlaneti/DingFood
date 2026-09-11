@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using FluentAssertions;
@@ -36,7 +36,7 @@ public sealed class IfoodWebhookTests : RepositoryTestBase
         _setting.SaveCredentials("client", "encrypted", true, null);
         _setting.SetEventDeliveryMode("Webhook");
         _settings.GetByCompanyAsync(1, Arg.Any<CancellationToken>()).Returns(_setting);
-        _settings.GetEnabledCompanyIdsAsync(Arg.Any<CancellationToken>()).Returns(new long[] { 1 });
+        _settings.GetEnabledSettingsAsync(Arg.Any<CancellationToken>()).Returns(new[] { _setting });
         _protector.Unprotect("DingFood.Integrations.Ifood.ClientSecret.v1", "encrypted").Returns(Secret);
         var mapping = IfoodMerchantMapping.Create(10).Value;
         mapping.SetMerchant("merchant-1", "merchant-1");
@@ -74,7 +74,7 @@ public sealed class IfoodWebhookTests : RepositoryTestBase
         var other = IfoodIntegrationSetting.Create(2).Value;
         other.SaveCredentials("client", "encrypted", true, null);
         other.SetEventDeliveryMode("Webhook");
-        _settings.GetEnabledCompanyIdsAsync(Arg.Any<CancellationToken>()).Returns(new long[] { 1, 2 });
+        _settings.GetEnabledSettingsAsync(Arg.Any<CancellationToken>()).Returns(new[] { _setting, other });
         _settings.GetByCompanyAsync(2, Arg.Any<CancellationToken>()).Returns(other);
         var sharedMappings = await _mappings.GetByCompanyAsync(1);
         _mappings.GetByCompanyAsync(2, Arg.Any<CancellationToken>()).Returns(sharedMappings);

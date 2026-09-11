@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using DingFood.Domain.Entities;
 using DingFood.Domain.Repositories;
 
@@ -8,11 +8,11 @@ internal sealed class IfoodIntegrationSettingRepository(AppDbContext context) : 
 {
     public async Task<IfoodIntegrationSetting?> GetByCompanyAsync(long companyId, CancellationToken cancellationToken = default)
         => await context.IfoodIntegrationSettings.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.CompanyId == companyId && x.IsActive, cancellationToken);
+            .SingleOrDefaultAsync(x => x.CompanyId == companyId && x.IsActive, cancellationToken);
 
     public async Task<IfoodIntegrationSetting?> GetByCompanyForUpdateAsync(long companyId, CancellationToken cancellationToken = default)
         => await context.IfoodIntegrationSettings
-            .FirstOrDefaultAsync(x => x.CompanyId == companyId && x.IsActive, cancellationToken);
+            .SingleOrDefaultAsync(x => x.CompanyId == companyId && x.IsActive, cancellationToken);
 
     public async Task<IReadOnlyCollection<long>> GetEnabledCompanyIdsAsync(CancellationToken cancellationToken = default)
         => await context.IfoodIntegrationSettings.AsNoTracking().IgnoreQueryFilters()
@@ -20,6 +20,11 @@ internal sealed class IfoodIntegrationSettingRepository(AppDbContext context) : 
             .Select(x => x.CompanyId)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyCollection<IfoodCompanyScope>> GetEnabledScopesAsync(CancellationToken ct = default)
+        => await context.IfoodIntegrationSettings.IgnoreQueryFilters().AsNoTracking().Where(s => s.IsActive && s.Enabled)
+            .Select(s => new IfoodCompanyScope(s.CompanyId, s.BrandId)).Distinct().ToListAsync(ct);
+    public async Task<IReadOnlyCollection<IfoodIntegrationSetting>> GetEnabledSettingsAsync(CancellationToken ct = default)
+        => await context.IfoodIntegrationSettings.IgnoreQueryFilters().AsNoTracking().Where(s => s.IsActive && s.Enabled).ToListAsync(ct);
     public async Task AddAsync(IfoodIntegrationSetting entity, CancellationToken cancellationToken = default)
         => await context.IfoodIntegrationSettings.AddAsync(entity, cancellationToken);
 }

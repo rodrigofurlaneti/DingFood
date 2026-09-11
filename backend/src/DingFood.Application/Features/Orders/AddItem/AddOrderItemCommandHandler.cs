@@ -1,4 +1,4 @@
-﻿using DingFood.Application.Abstractions.Messaging;
+using DingFood.Application.Abstractions.Messaging;
 using DingFood.Application.Abstractions.Printing;
 using DingFood.Domain.Exceptions;
 using DingFood.Domain.Entities;
@@ -206,7 +206,7 @@ internal sealed class AddOrderItemCommandHandler : BaseCommandHandler<AddOrderIt
         long? movementEmployeeId = employeeId.HasValue && employeeId.Value > 0 ? employeeId.Value : null;
 
         var movementResult = StockMovement.Create(
-            stockItemId: stockSnapshot.ProductId,
+            stockItemId: stockSnapshot.StockItemId,
             stockMovementTypeId: 2, // Tipo: Venda/Saída
             purchaseItemId: null,
             orderItemId: order.Items.Last().Id,
@@ -290,7 +290,7 @@ internal sealed class AddOrderItemCommandHandler : BaseCommandHandler<AddOrderIt
 
         long? linkedMovementEmployeeId = employeeId.HasValue && employeeId.Value > 0 ? employeeId.Value : null;
         var linkedMovementResult = StockMovement.Create(
-            stockItemId: linkedStock.ProductId,
+            stockItemId: linkedStock.StockItemId,
             stockMovementTypeId: 2, // Tipo: Venda/Saída
             purchaseItemId: null,
             orderItemId: primaryItem.Id,

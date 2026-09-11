@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CompanySelector } from "./CompanySelector";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
@@ -26,7 +26,7 @@ const links = [
 export function AppShell() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const { userName, branchId, companyId, clear } = useAuthStore();
+    const { userName, companyId, clear } = useAuthStore();
     const { theme, toggleTheme } = useThemeStore();
     const [cashOpen, setCashOpen] = useState(false);
     const [shiftOpen, setShiftOpen] = useState(false);
@@ -55,7 +55,7 @@ export function AppShell() {
             </a>
 
             <header className="topbar">
-                <CompanySelector />
+
                 <button
                     type="button"
                     className="nav-toggle"
@@ -68,12 +68,13 @@ export function AppShell() {
                 </button>
 
                 {/* Alternância direta com base no estado 'theme' */}
-                <img
+                <img className="topbar-logo"
                     src={theme === "light" ? logoLight : logoDark}
                     alt="Logo do Sistema"
                     style={{ height: 64, objectFit: "contain", transition: "opacity 0.2s ease-in-out" }}
                 />
 
+                <CompanySelector />
                 <nav id="topbar-nav" className={`topbar-nav${navOpen ? " is-open" : ""}`}>
                     {links.filter((link) => canSee(link.feature)).map((link) => (
                         <NavLink
@@ -123,7 +124,7 @@ export function AppShell() {
                         >
                             {({ isActive }) => (
                                 <>
-                                    <img
+                                    <img className="topbar-logo"
                                         src={logoIFood}
                                         alt=""
                                         aria-hidden="true"
@@ -166,7 +167,7 @@ export function AppShell() {
                         >
                             {({ isActive }) => (
                                 <>
-                                    <img
+                                    <img className="topbar-logo"
                                         src={logoAsaas}
                                         alt=""
                                         aria-hidden="true"
@@ -209,7 +210,7 @@ export function AppShell() {
                         >
                             {({ isActive }) => (
                                 <>
-                                    <img
+                                    <img className="topbar-logo"
                                         src={logoKeeta}
                                         alt=""
                                         aria-hidden="true"
@@ -249,12 +250,7 @@ export function AppShell() {
                     )}
                 </nav>
                 <span style={{ flex: 1 }} />
-                <span
-                    className="chip topbar-branch-chip"
-                    style={{ "--dot": "var(--free)" } as React.CSSProperties}
-                >
-                    Filial {branchId}
-                </span>
+
                 {canSee("Caixa") && (
                     <button type="button" className="btn-ghost" onClick={() => setCashOpen(true)}>
                         Caixa

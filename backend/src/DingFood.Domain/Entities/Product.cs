@@ -1,4 +1,4 @@
-﻿using DingFood.Domain.Primitives;
+using DingFood.Domain.Primitives;
 
 namespace DingFood.Domain.Entities;
 
@@ -16,6 +16,7 @@ public sealed class Product : AggregateRoot
         Touch();
     }
     public long CompanyId { get; private set; }
+    public long? BrandId { get; private set; }
     public long CategoryId { get; private set; }
     public long UnitOfMeasureId { get; private set; }
     public string Name { get; private set; } = null!;

@@ -63,11 +63,11 @@ internal sealed class IfoodReviewWatcherBackgroundService(
         using var scope = serviceProvider.CreateScope();
         var settingRepository = scope.ServiceProvider.GetRequiredService<IIfoodIntegrationSettingRepository>();
 
-        var companyIds = await settingRepository.GetEnabledCompanyIdsAsync(stoppingToken);
-        foreach (var companyId in companyIds)
+        var companyIds = await settingRepository.GetEnabledScopesAsync(stoppingToken);
+        foreach (var (companyId, brandId) in companyIds)
         {
             using var companyScope = serviceProvider.CreateScope();
-            companyScope.ServiceProvider.GetService<DingFood.Infrastructure.Tenancy.CurrentTenantService>()?.SetBackgroundCompany(companyId);
+            companyScope.ServiceProvider.GetService<DingFood.Infrastructure.Tenancy.CurrentTenantService>()?.SetBackgroundCompany(companyId, brandId);
             var mappingRepository = companyScope.ServiceProvider.GetRequiredService<IIfoodMerchantMappingRepository>();
             var branchRepository = companyScope.ServiceProvider.GetRequiredService<IBranchRepository>();
             var tokenProvider = companyScope.ServiceProvider.GetRequiredService<IIfoodTokenProvider>();

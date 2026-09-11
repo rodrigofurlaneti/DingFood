@@ -1,4 +1,4 @@
-﻿using DingFood.Domain.Enums;
+using DingFood.Domain.Enums;
 using DingFood.Domain.Primitives;
 
 namespace DingFood.Domain.Entities;
@@ -6,6 +6,7 @@ namespace DingFood.Domain.Entities;
 public sealed class AsaasIntegrationWebhookLog : AggregateRoot
 {
     public long CompanyId { get; private set; }
+    public long? BrandId { get; private set; }
     public long? BranchId { get; private set; }
     public string Event { get; private set; } = string.Empty;
     public string? AsaasEventId { get; private set; }

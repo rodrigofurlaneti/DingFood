@@ -1,10 +1,11 @@
-﻿using DingFood.Domain.Primitives;
+using DingFood.Domain.Primitives;
 
 namespace DingFood.Domain.Entities;
 
 public sealed class Customer : AggregateRoot
 {
     public long CompanyId { get; private set; }
+    public long? BrandId { get; private set; }
     public string Name { get; private set; } = null!;
     public string? Phone { get; private set; }
     public string? Cpf { get; private set; }

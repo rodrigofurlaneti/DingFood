@@ -1,4 +1,4 @@
-﻿using DingFood.Application.Abstractions.Messaging;
+using DingFood.Application.Abstractions.Messaging;
 using DingFood.Domain.Entities;
 using DingFood.Domain.Primitives;
 using DingFood.Domain.Repositories;
@@ -28,6 +28,18 @@ internal sealed class GetMyFeaturesQueryHandler(
             if (request.IsManager)
                 return Result.Success(new MyFeaturesResponse(true, allFeatures.Select(f => f.Code).ToList()));
 
+            if (tenant?.BranchId is { } activeBranch)
+            {
+                var ids = new HashSet<long>();
+                if (tenant.EmployeeId is { } employeeId)
+                {
+                    var employee = await employeeRepository.GetByIdAsync(employeeId, cancellationToken);
+                    if (employee is { IsActive: true } && employee.BranchId == activeBranch)
+                        foreach (var link in await jobTitleFeatureRepository.GetByJobTitleAsync(employee.JobTitleId, cancellationToken)) ids.Add(link.AppFeatureId);
+                }
+                foreach (var link in await userFeatureRepository.GetByUserAsync(request.AppUserId, cancellationToken)) ids.Add(link.AppFeatureId);
+                return Result.Success(new MyFeaturesResponse(false, allFeatures.Where(f => ids.Contains(f.Id)).Select(f => f.Code).ToList()));
+            }
             var user = await userRepository.GetByIdAsync(request.AppUserId, cancellationToken);
             if (user is null && tenant?.CompanyId is { } companyId && companyAccess is not null)
             {

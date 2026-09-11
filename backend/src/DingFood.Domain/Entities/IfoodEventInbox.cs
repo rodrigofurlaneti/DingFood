@@ -1,4 +1,4 @@
-﻿using DingFood.Domain.Primitives;
+using DingFood.Domain.Primitives;
 
 namespace DingFood.Domain.Entities;
 
@@ -6,6 +6,7 @@ public sealed class IfoodEventInbox : Entity
 {
     private IfoodEventInbox() : base(0) { }
     public long CompanyId { get; private set; }
+    public long? BrandId { get; private set; }
     public string EventId { get; private set; } = null!;
     public string Payload { get; private set; } = null!;
     public DateTime ReceivedAtUtc { get; private set; }

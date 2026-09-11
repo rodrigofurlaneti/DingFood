@@ -1,4 +1,4 @@
-﻿using DingFood.Domain.Primitives;
+using DingFood.Domain.Primitives;
 
 namespace DingFood.Domain.Entities;
 
@@ -8,6 +8,7 @@ public sealed class CustomerAppUser : AggregateRoot
     private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
 
     public long CompanyId { get; private set; }
+    public long? BrandId { get; private set; }
     public long? BranchId { get; private set; }
     public long? CustomerId { get; private set; }
     public string UserName { get; private set; } = null!;

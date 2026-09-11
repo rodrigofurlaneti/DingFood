@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
 using NSubstitute;
@@ -61,7 +61,7 @@ public sealed class IfoodTokenProviderTests
     [Fact]
     public async Task GetAccessTokenAsync_CachedToken_ShouldReturnCachedWithoutCallingRepositoryOrAuthClient()
     {
-        _cache.Set("Ifood:token:1", "cached-token");
+        _cache.Set("Ifood:token:1:brand:", "cached-token");
 
         var token = await _provider.GetAccessTokenAsync(1, CancellationToken.None);
 
@@ -141,7 +141,7 @@ public sealed class IfoodTokenProviderTests
         var token = await _provider.GetAccessTokenAsync(1, CancellationToken.None);
 
         token.Should().BeNull();
-        _cache.TryGetValue("Ifood:token:1", out _).Should().BeFalse();
+        _cache.TryGetValue("Ifood:token:1:brand:", out _).Should().BeFalse();
     }
 
     [Fact]
@@ -155,18 +155,18 @@ public sealed class IfoodTokenProviderTests
         var token = await _provider.GetAccessTokenAsync(1, CancellationToken.None);
 
         token.Should().Be("new-token");
-        _cache.TryGetValue<string>("Ifood:token:1", out var cached).Should().BeTrue();
+        _cache.TryGetValue<string>("Ifood:token:1:brand:", out var cached).Should().BeTrue();
         cached.Should().Be("new-token");
     }
 
     [Fact]
     public async Task Invalidate_ShouldRemoveCachedTokenForCompany()
     {
-        _cache.Set("Ifood:token:1", "cached-token");
+        _cache.Set("Ifood:token:1:brand:", "cached-token");
 
         _provider.Invalidate(1);
 
-        _cache.TryGetValue("Ifood:token:1", out _).Should().BeFalse();
+        _cache.TryGetValue("Ifood:token:1:brand:", out _).Should().BeFalse();
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public sealed class IfoodTokenProviderTests
     [Fact]
     public async Task GetAccessTokenAsync_WithStopwatch_CachedToken_ShouldReturnCached()
     {
-        _cache.Set("Ifood:token:1", "cached-token");
+        _cache.Set("Ifood:token:1:brand:", "cached-token");
         var stopwatch = Stopwatch.StartNew();
 
         var token = await _provider.GetAccessTokenAsync(1, stopwatch, CancellationToken.None);

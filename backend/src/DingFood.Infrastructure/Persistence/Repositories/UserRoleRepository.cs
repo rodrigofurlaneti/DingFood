@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using DingFood.Domain.Entities;
 using DingFood.Domain.Repositories;
 
@@ -18,5 +18,17 @@ internal sealed class UserRoleRepository(AppDbContext context) : IUserRoleReposi
             .ToListAsync(cancellationToken);
 
     public async Task AddAsync(UserRole entity, CancellationToken cancellationToken = default)
-        => await context.UserRoles.AddAsync(entity, cancellationToken);
+    {
+        await context.UserRoles.AddAsync(entity, cancellationToken);
+        var user = await context.AppUsers.SingleOrDefaultAsync(u => u.Id == entity.AppUserId, cancellationToken);
+        if (user?.EmployeeId is { } employeeId)
+        {
+            var employee = await context.Employees.SingleOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
+            if (employee is not null)
+            {
+                var grant = await context.Set<AppUserBranch>().SingleOrDefaultAsync(g => g.AppUserId == user.Id && g.BranchId == employee.BranchId, cancellationToken);
+                grant?.Update(employeeId, true, entity.RoleId);
+            }
+        }
+    }
 }

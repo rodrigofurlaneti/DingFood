@@ -1,4 +1,4 @@
-﻿using DingFood.Domain.Primitives;
+using DingFood.Domain.Primitives;
 
 namespace DingFood.Domain.Entities;
 
@@ -6,6 +6,7 @@ public sealed class AsaasIntegrationCustomer : AggregateRoot
 {
     public long CustomerId { get; private set; }
     public long CompanyId { get; private set; }
+    public long? BrandId { get; private set; }
     public string AsaasCustomerId { get; private set; } = string.Empty;
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }

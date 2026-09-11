@@ -25,24 +25,32 @@ internal sealed class BusinessGroupRepository(AppDbContext db, DbContextOptions<
     {
         // Dedicated administrative transaction: authorization and group association are checked
         // by the Application handler. Never change the operational request's tenant context.
-        await using var admin = new AppDbContext(options);
-        await using var transaction = await admin.Database.BeginTransactionAsync(ct);
-        admin.Attach(company.BusinessGroup);
-        admin.Companies.Add(company);
-        await admin.SaveChangesAsync(ct);
-        var role = Role.Create(company.Id, "Administrador", "Administrador da empresa criada no grupo.").Value;
-        admin.Roles.Add(role);
-        admin.Branchs.Add(Branch.Create(company.Id, branchName, null, company.Phone, null, null, null, null, null, null).Value);
-        await admin.SaveChangesAsync(ct);
-        var user = await admin.AppUsers.SingleAsync(x => x.Id == userId, ct);
-        var home = await admin.Companies.SingleAsync(x => x.Id == user.CompanyId, ct);
-        admin.AppUserCompanies.Add(AppUserCompany.Create(user, home, company).Value);
-        admin.UserRoles.Add(UserRole.Create(company.Id, userId, role.Id).Value);
-        await admin.SaveChangesAsync(ct);
-        await transaction.CommitAsync(ct);
-        return company.Id;
+        var strategy = db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            // A retry must start with fresh tracking and generated keys after rollback.
+            await using var admin = new AppDbContext(options);
+            await using var transaction = await admin.Database.BeginTransactionAsync(ct);
+            var created = Company.Create(company.LegalName, company.TradeName, company.Cnpj, company.Email, company.Phone).Value;
+            created.AssignToGroup(company.BusinessGroup);
+            admin.Attach(created.BusinessGroup);
+            admin.Companies.Add(created);
+            await admin.SaveChangesAsync(ct);
+            var role = Role.Create(created.Id, "Administrador", "Administrador da empresa criada no grupo.").Value;
+            admin.Roles.Add(role);
+            var branch = Branch.Create(created.Id, branchName, null, created.Phone, null, null, null, null, null, null).Value;
+            admin.Branchs.Add(branch);
+            await admin.SaveChangesAsync(ct);
+            var user = await admin.AppUsers.SingleAsync(x => x.Id == userId, ct);
+            var home = await admin.Companies.SingleAsync(x => x.Id == user.CompanyId, ct);
+            admin.AppUserCompanies.Add(AppUserCompany.Create(user, home, created).Value);
+            admin.UserRoles.Add(UserRole.Create(created.Id, userId, role.Id).Value);
+            admin.Add(AppUserBranch.Create(userId, branch.Id, roleId: role.Id));
+            await admin.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+            return created.Id;
+        });
     }
-
     public async Task SetAccessAsync(AppUserCompany grant, long? roleId, CancellationToken ct)
     {
         var existing = await db.AppUserCompanies.SingleOrDefaultAsync(x => x.AppUserId == grant.AppUserId && x.CompanyId == grant.CompanyId, ct);

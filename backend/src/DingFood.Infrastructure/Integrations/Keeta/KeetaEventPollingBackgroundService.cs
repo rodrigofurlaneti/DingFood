@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -57,7 +57,10 @@ internal sealed class KeetaEventPollingBackgroundService(
         {
             try
             {
-                await mediator.Send(new PollKeetaEventsCommand(companyId, branchId, merchantIds), stoppingToken);
+                using var operation = serviceProvider.CreateScope();
+                await operation.ServiceProvider.GetRequiredService<DingFood.Application.Abstractions.Tenancy.IPublicWorkplaceScope>().BindAsync(branchId, null, null, stoppingToken);
+                var scopedMediator = operation.ServiceProvider.GetRequiredService<IMediator>();
+                await scopedMediator.Send(new PollKeetaEventsCommand(companyId, branchId, merchantIds), stoppingToken);
             }
             catch (Exception ex)
             {

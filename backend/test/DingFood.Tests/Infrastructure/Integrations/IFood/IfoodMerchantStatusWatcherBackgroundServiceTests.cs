@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -51,7 +51,7 @@ public sealed class IfoodMerchantStatusWatcherBackgroundServiceTests
 
         _service = new IfoodMerchantStatusWatcherBackgroundService(rootProvider, _logger);
 
-        _settingRepository.GetEnabledCompanyIdsAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<long>)[1]);
+        _settingRepository.GetEnabledScopesAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<IfoodCompanyScope>)[new(1, null)]);
         _tokenProvider.GetAccessTokenAsync(1, Arg.Any<CancellationToken>()).Returns("tok");
         _openingHoursRepository.GetByBranchAsync(Arg.Any<long>(), Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<IfoodOpeningHours>)[]);
     }
@@ -85,7 +85,7 @@ public sealed class IfoodMerchantStatusWatcherBackgroundServiceTests
     [Fact]
     public async Task RunCycleAsync_NoEnabledCompanies_ShouldNotCallMerchantClient()
     {
-        _settingRepository.GetEnabledCompanyIdsAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<long>)[]);
+        _settingRepository.GetEnabledScopesAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<IfoodCompanyScope>)[]);
 
         await RunCycleAsync();
 
@@ -306,7 +306,7 @@ public sealed class IfoodMerchantStatusWatcherBackgroundServiceTests
         var act = () => (Task)method.Invoke(_service, [cts.Token])!;
 
         await act.Should().NotThrowAsync();
-        await _settingRepository.DidNotReceive().GetEnabledCompanyIdsAsync(Arg.Any<CancellationToken>());
+        await _settingRepository.DidNotReceive().GetEnabledScopesAsync(Arg.Any<CancellationToken>());
     }
 
     // ---- IsWithinConfiguredShift / turno que cruza a meia-noite ----

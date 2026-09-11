@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +32,7 @@ public sealed class KeetaEventPollingBackgroundServiceTests
         var scopedProvider = Substitute.For<IServiceProvider>();
         scopedProvider.GetService(typeof(IKeetaIntegrationMerchantMappingRepository)).Returns(_mappingRepository);
         scopedProvider.GetService(typeof(IMediator)).Returns(_mediator);
+        scopedProvider.GetService(typeof(DingFood.Application.Abstractions.Tenancy.IPublicWorkplaceScope)).Returns(Substitute.For<DingFood.Application.Abstractions.Tenancy.IPublicWorkplaceScope>());
 
         var scope = Substitute.For<IServiceScope>();
         scope.ServiceProvider.Returns(scopedProvider);

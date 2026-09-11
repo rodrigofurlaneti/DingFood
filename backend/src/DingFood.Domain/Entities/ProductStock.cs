@@ -1,9 +1,13 @@
-﻿using DingFood.Domain.Primitives;
+using DingFood.Domain.Primitives;
 
 namespace DingFood.Domain.Entities;
 
 public sealed class ProductStock
 {
+    private StockItem? _branchStock;
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public long StockItemId => _branchStock?.Id ?? ProductId;
+    public static ProductStock FromBranchStock(StockItem stock) => new(stock.ProductId, stock.CurrentQuantity, stock.MinimumQuantity) { _branchStock = stock };
     public long ProductId { get; private set; }
     public decimal CurrentBalance { get; private set; }
     public decimal MinimumQuantity { get; private set; }
@@ -34,6 +38,11 @@ public sealed class ProductStock
             return Result.Failure(new Error("Stock.Insufficient", $"Estoque insuficiente. Saldo atual: {CurrentBalance}, solicitado: {quantity}."));
         }
 
+        if (_branchStock is not null)
+        {
+            var changed = _branchStock.Decrease(quantity);
+            if (changed.IsFailure) return changed;
+        }
         CurrentBalance -= quantity;
         UpdatedAt = DateTime.Now;
         return Result.Success();

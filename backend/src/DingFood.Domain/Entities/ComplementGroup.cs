@@ -1,4 +1,4 @@
-﻿using DingFood.Domain.Primitives;
+using DingFood.Domain.Primitives;
 
 namespace DingFood.Domain.Entities;
 
@@ -12,6 +12,7 @@ public sealed class ComplementGroup : AggregateRoot
     private readonly List<Complement> _complements = [];
 
     public long CompanyId { get; private set; }
+    public long? BrandId { get; private set; }
     public string Name { get; private set; } = null!;
     public long ComplementGroupTypeId { get; private set; }
     public int MinSelection { get; private set; }

@@ -1,10 +1,11 @@
-﻿using DingFood.Domain.Primitives;
+using DingFood.Domain.Primitives;
 
 namespace DingFood.Domain.Entities;
 
 public sealed class AsaasIntegrationSetting : AggregateRoot
 {
     public long CompanyId { get; private set; }
+    public long? BrandId { get; private set; }
     public long? BranchId { get; private set; }
     public string Environment { get; private set; } = "Sandbox";
     public string ApiKeyEncrypted { get; private set; } = string.Empty;

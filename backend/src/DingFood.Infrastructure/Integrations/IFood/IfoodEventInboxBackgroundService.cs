@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,7 +48,7 @@ internal sealed class IfoodEventInboxBackgroundService(
                 .SetProperty(row => row.Attempts, row => row.Attempts + 1), ct);
         if (acquired == 0) return;
         var entry = await db.Set<IfoodEventInbox>().AsNoTracking().SingleAsync(row => row.Id == id, ct);
-        scope.ServiceProvider.GetService<DingFood.Infrastructure.Tenancy.CurrentTenantService>()?.SetBackgroundCompany(entry.CompanyId);
+        scope.ServiceProvider.GetService<DingFood.Infrastructure.Tenancy.CurrentTenantService>()?.SetBackgroundCompany(entry.CompanyId, entry.BrandId);
         string? error = null;
         try
         {

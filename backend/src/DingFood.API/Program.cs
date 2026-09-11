@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -73,6 +73,7 @@ app.UseCors("Default");
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseMiddleware<DingFood.API.Middleware.CompanyContextMiddleware>();
+app.UseMiddleware<DingFood.API.Middleware.WorkplaceContextMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions

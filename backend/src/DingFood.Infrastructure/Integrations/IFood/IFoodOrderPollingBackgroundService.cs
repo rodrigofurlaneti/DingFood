@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -47,17 +47,18 @@ internal sealed class IfoodOrderPollingBackgroundService(
         using var scope = serviceProvider.CreateScope();
         var settingRepository = scope.ServiceProvider.GetRequiredService<IIfoodIntegrationSettingRepository>();
 
-        var companyIds = await settingRepository.GetEnabledCompanyIdsAsync(stoppingToken);
+        var companyIds = await settingRepository.GetEnabledScopesAsync(stoppingToken);
         await Parallel.ForEachAsync(companyIds.Distinct(), new ParallelOptions
         {
             MaxDegreeOfParallelism = 4, CancellationToken = stoppingToken
-        }, async (companyId, ct) =>
+        }, async (workplaceScope, ct) =>
         {
+            var (companyId, brandId) = workplaceScope;
             try
             {
                 using var companyScope = serviceProvider.CreateScope();
                 companyScope.ServiceProvider.GetRequiredService<DingFood.Infrastructure.Tenancy.CurrentTenantService>()
-                    .SetBackgroundCompany(companyId);
+                    .SetBackgroundCompany(companyId, brandId);
                 var mediator = companyScope.ServiceProvider.GetRequiredService<IMediator>();
                 await mediator.Send(new SyncIfoodOrdersCommand(companyId), ct);
             }

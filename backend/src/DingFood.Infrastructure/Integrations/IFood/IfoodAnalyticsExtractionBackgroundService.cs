@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -42,10 +42,10 @@ internal sealed class IfoodAnalyticsExtractionBackgroundService(
         using var scope = scopes.CreateScope();
         var settings = scope.ServiceProvider.GetRequiredService<IIfoodIntegrationSettingRepository>();
         var today = LocalNow(time.GetUtcNow()).Date;
-        foreach (var companyId in await settings.GetEnabledCompanyIdsAsync(ct))
+        foreach (var (companyId, brandId) in await settings.GetEnabledScopesAsync(ct))
         {
             using var companyScope = scopes.CreateScope();
-            companyScope.ServiceProvider.GetService<DingFood.Infrastructure.Tenancy.CurrentTenantService>()?.SetBackgroundCompany(companyId);
+            companyScope.ServiceProvider.GetService<DingFood.Infrastructure.Tenancy.CurrentTenantService>()?.SetBackgroundCompany(companyId, brandId);
             var db = companyScope.ServiceProvider.GetRequiredService<AppDbContext>();
             var mappings = companyScope.ServiceProvider.GetRequiredService<IIfoodMerchantMappingRepository>();
             var tokens = companyScope.ServiceProvider.GetRequiredService<IIfoodTokenProvider>();

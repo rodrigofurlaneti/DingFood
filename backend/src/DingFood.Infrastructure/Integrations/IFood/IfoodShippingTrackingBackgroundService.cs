@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -32,7 +32,7 @@ internal sealed class IfoodShippingTrackingBackgroundService(
         foreach (var row in pending)
         {
             using var companyScope = scopes.CreateScope();
-            companyScope.ServiceProvider.GetService<DingFood.Infrastructure.Tenancy.CurrentTenantService>()?.SetBackgroundCompany(row.CompanyId);
+            companyScope.ServiceProvider.GetService<DingFood.Infrastructure.Tenancy.CurrentTenantService>()?.SetBackgroundCompany(row.CompanyId, (await listingDb.Branchs.AsNoTracking().SingleAsync(b => b.Id == row.BranchId, ct)).BrandId);
             var db = companyScope.ServiceProvider.GetRequiredService<AppDbContext>();
             var tokens = companyScope.ServiceProvider.GetRequiredService<IIfoodTokenProvider>();
             var client = companyScope.ServiceProvider.GetRequiredService<IIfoodShippingClient>();

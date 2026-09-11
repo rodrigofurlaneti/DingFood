@@ -1,4 +1,4 @@
-﻿namespace DingFood.Application.Abstractions.Tenancy;
+namespace DingFood.Application.Abstractions.Tenancy;
 
 /// <summary>
 /// Resolve a empresa (Company) do usuário autenticado na requisição atual.
@@ -13,4 +13,8 @@ public interface ICurrentTenantService
     /// Quando null, os filtros de tenant NÃO são aplicados — use com cuidado fora de request HTTP.
     /// </summary>
     long? CompanyId { get; }
+    long? BrandId => null;
+    long? BranchId => null;
+    long? UserId => null;
+    long? EmployeeId => null;
 }

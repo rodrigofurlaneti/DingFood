@@ -28,6 +28,30 @@ public sealed class BusinessGroupIsolationTests : RepositoryTestBase
     }
 
     [Fact]
+    public async Task CreationRunsInsideRetryStrategyAndPersistsAdministratorAndBranch()
+    {
+        var (a, _, _, user) = await SeedAsync();
+        var options = new DbContextOptionsBuilder<DingFood.Infrastructure.Persistence.AppDbContext>()
+            .UseSqlite(Connection, sqlite => sqlite.ExecutionStrategy(dependencies => new TestRetryStrategy(dependencies)))
+            .ReplaceService<Microsoft.EntityFrameworkCore.Infrastructure.IModelCustomizer, SqliteCompatibleModelCustomizer>()
+            .Options;
+        await using var retryContext = new DingFood.Infrastructure.Persistence.AppDbContext(options);
+        var repository = new DingFood.Infrastructure.Persistence.Repositories.BusinessGroupRepository(retryContext, options);
+        var company = Company.Create("Nova Ltda", "Nova", "44444444000144", null, null).Value;
+        company.AssignToGroup(a.BusinessGroup);
+        var id = await repository.AddCompanyWithAdministratorAsync(company, user.Id, "Matriz", default);
+        (await Context.Companies.SingleAsync(c => c.Id == id)).BusinessGroupId.Should().Be(a.BusinessGroupId);
+        (await Context.Branchs.SingleAsync(b => b.CompanyId == id)).Name.Should().Be("Matriz");
+        (await Context.AppUserCompanies.SingleAsync(g => g.CompanyId == id)).AppUserId.Should().Be(user.Id);
+        (await Context.UserRoles.SingleAsync(r => r.CompanyId == id)).AppUserId.Should().Be(user.Id);
+    }
+
+    private sealed class TestRetryStrategy(Microsoft.EntityFrameworkCore.Storage.ExecutionStrategyDependencies dependencies)
+        : Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy(dependencies, 1, TimeSpan.Zero)
+    {
+        protected override bool ShouldRetryOn(Exception exception) => false;
+    }
+    [Fact]
     public async Task GroupDoesNotGrantAccessToSiblingOrForeignCompany()
     {
         var (a, b, other, user) = await SeedAsync();

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Memory;
 using System.Diagnostics;
 using DingFood.Application.Abstractions.Integrations.Ifood;
 using DingFood.Application.Abstractions.Security;
@@ -18,7 +18,7 @@ internal sealed class IfoodTokenProvider(
 {
     private const string ProtectorPurpose = "DingFood.Integrations.Ifood.ClientSecret.v1";
 
-    private static string CacheKey(long companyId) => $"Ifood:token:{companyId}";
+    private string CacheKey(long companyId) => $"Ifood:token:{companyId}:brand:{tenant?.BrandId}";
 
     public async Task<string?> GetAccessTokenAsync(long companyId, CancellationToken cancellationToken = default)
     {

@@ -4,7 +4,7 @@ import { useAuthStore } from "../stores/authStore";
 import { api } from "../lib/apiClient";
 
 export type AllowedCompany = { companyId: number; businessGroupId: number; groupName: string; tradeName: string; employeeId: number | null; roles: string[] };
-export type CompanyBranch = { id: number; name: string; isActive: boolean };
+export type CompanyBranch = { id: number; name: string; isActive: boolean; brandId: number; brandName: string; employeeId: number | null };
 export const getAllowedCompanies = () => {
     const { homeCompanyId, companyId } = useAuthStore.getState();
     return api<AllowedCompany[]>("/api/companies/allowed", { headers: { "X-Company-Id": String(homeCompanyId ?? companyId) } });
@@ -14,7 +14,7 @@ export function CompanyContextGate({ children }: { children: ReactNode }) {
     const { companyId, branchId, setCompany, setBranchId, clear } = useAuthStore();
     const companies = useQuery({ queryKey: ["allowed-companies", companyId], queryFn: getAllowedCompanies, retry: false });
     const selected = companies.data?.find(c => c.companyId === companyId);
-    const branches = useQuery({ queryKey: ["company-branches", companyId], queryFn: () => api<CompanyBranch[]>(`/api/branches/company/${companyId}`), enabled: !!selected, retry: false });
+    const branches = useQuery({ queryKey: ["company-branches", companyId], queryFn: () => api<CompanyBranch[]>("/api/workplaces"), enabled: !!selected, retry: false });
     const activeBranches = branches.data?.filter(b => b.isActive);
     const branchValid = activeBranches?.some(b => b.id === branchId);
     useEffect(() => {
@@ -22,8 +22,8 @@ export function CompanyContextGate({ children }: { children: ReactNode }) {
             const first = companies.data[0];
             setCompany(first.companyId, first.businessGroupId);
         }
-        if (selected) useAuthStore.setState({ businessGroupId: selected.businessGroupId, employeeId: selected.employeeId });
-    }, [companies.data, selected, setCompany]);
+        if (selected) useAuthStore.setState({ businessGroupId: selected.businessGroupId, employeeId: activeBranches?.find(b => b.id === branchId)?.employeeId ?? null });
+    }, [companies.data, selected, setCompany, branchId, branches.data]);
     useEffect(() => {
         if (selected && activeBranches?.length && !branchValid) setBranchId(activeBranches[0].id);
     }, [selected, activeBranches, branchValid, setBranchId]);

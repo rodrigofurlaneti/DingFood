@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DingFood.Application.Abstractions.Integrations.Keeta;
 using DingFood.Application.Abstractions.Messaging;
+using DingFood.Application.Abstractions.Tenancy;
 using DingFood.Domain.Entities;
 using DingFood.Domain.Primitives;
 using DingFood.Domain.Repositories;
@@ -18,19 +19,22 @@ namespace DingFood.Application.Features.Integrations.Keeta.Authorization.Process
         private readonly IKeetaIntegrationMerchantMappingRepository _mappingRepository;
         private readonly IKeetaCredentialsResolver _credentialsResolver;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IPublicWorkplaceScope? _workplace;
 
         public ProcessKeetaAuthorizationWebhookCommandHandler(
             IKeetaIntegrationAuthorizationSessionRepository sessionRepository,
             IKeetaIntegrationMerchantMappingRepository mappingRepository,
             IKeetaCredentialsResolver credentialsResolver,
             ILogTrackerRepository logRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IPublicWorkplaceScope? workplace = null)
             : base(logRepository, unitOfWork)
         {
             _sessionRepository = sessionRepository;
             _mappingRepository = mappingRepository;
             _credentialsResolver = credentialsResolver;
             _unitOfWork = unitOfWork;
+            _workplace = workplace;
         }
 
         public override async Task<Result> Handle(ProcessKeetaAuthorizationWebhookCommand request, CancellationToken cancellationToken)
@@ -59,6 +63,8 @@ namespace DingFood.Application.Features.Integrations.Keeta.Authorization.Process
                         return Result.Failure(signatureError);
 
                     var session = await _sessionRepository.GetByAuthIdAsync(payload.AuthId, cancellationToken);
+                    if (session is not null && _workplace is not null)
+                        await _workplace.BindAsync(session.BranchId, null, null, cancellationToken);
 
                     if (payload.OpType == 2)
                     {
@@ -67,6 +73,7 @@ namespace DingFood.Application.Features.Integrations.Keeta.Authorization.Process
                         var mapping = await _mappingRepository.GetByKeetaMerchantIdAsync(payload.ShopId, cancellationToken);
                         if (mapping is not null)
                         {
+                            if (_workplace is not null) await _workplace.BindAsync(mapping.BranchId, null, null, cancellationToken);
                             mapping.UpdateStatus(isAuthorized: false, isOnboarded: mapping.IsOnboarded);
                             _mappingRepository.Update(mapping);
                         }

@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using DingFood.Domain.Entities;
@@ -67,9 +67,9 @@ namespace DingFood.Tests.Infrastructure.Persistence.Configurations
 
         // A configuração real não declara nenhum HasOne/HasForeignKey para DiningAreaId/DiningTableId.
         [Fact]
-        public void Configure_ShouldNotDeclareAnyForeignKey()
+        public void Configure_ShouldDeclareOwnershipForeignKeys()
         {
-            EntityType.GetForeignKeys().Should().BeEmpty();
+            EntityType.GetForeignKeys().Should().NotBeEmpty();
         }
     }
 }

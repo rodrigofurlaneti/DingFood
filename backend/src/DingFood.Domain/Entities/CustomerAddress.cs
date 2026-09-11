@@ -1,10 +1,11 @@
-﻿using DingFood.Domain.Primitives;
+using DingFood.Domain.Primitives;
 
 namespace DingFood.Domain.Entities;
 
 public sealed class CustomerAddress : AggregateRoot
 {
     public long CompanyId { get; private set; }
+    public long? BrandId { get; private set; }
     public long? BranchId { get; private set; }
     public long? CustomerId { get; private set; }
     public long? LastOrderId { get; private set; }

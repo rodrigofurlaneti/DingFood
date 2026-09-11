@@ -1,4 +1,4 @@
-﻿using DingFood.Domain.Primitives;
+using DingFood.Domain.Primitives;
 
 namespace DingFood.Domain.Entities;
 
@@ -6,6 +6,7 @@ public sealed class AsaasIntegrationSavedCard : AggregateRoot
 {
     public long CustomerId { get; private set; }
     public long CompanyId { get; private set; }
+    public long? BrandId { get; private set; }
     public string CreditCardToken { get; private set; } = string.Empty;
     public string CardBrand { get; private set; } = string.Empty;
     public string Last4Digits { get; private set; } = string.Empty;

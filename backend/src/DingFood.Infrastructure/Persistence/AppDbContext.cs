@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using DingFood.Application.Abstractions.Tenancy;
 using DingFood.Domain.Entities;
 using DingFood.Domain.Exceptions;
@@ -117,6 +117,7 @@ public sealed partial class AppDbContext(DbContextOptions<AppDbContext> options,
         ConfigureCompanyScopedTenantFilters(modelBuilder);
         ConfigureBranchScopedTenantFilters(modelBuilder);
         ConfigureAdditionalTenantFilters(modelBuilder);
+        ConfigureOperationalScopes(modelBuilder);
     }
 
     private void ConfigureCompanyScopedTenantFilters(ModelBuilder modelBuilder)

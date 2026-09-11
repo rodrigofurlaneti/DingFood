@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using DingFood.Application.Abstractions.Authentication;
 using DingFood.Domain.Entities;
@@ -24,6 +24,7 @@ internal sealed class JwtTokenProvider(IOptions<JwtOptions> options) : IJwtToken
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
+        if (customer.BrandId is { } brandId) claims.Add(new Claim("brandId", brandId.ToString()));
         if (customer.CustomerId is { } customerId)
         {
             claims.Add(new Claim("customerId", customerId.ToString()));

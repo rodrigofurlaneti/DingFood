@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +18,7 @@ public sealed class CategoriesController(
     ILogTrackerRepository logRepository,
     IUnitOfWork unitOfWork) : ApiController(mediator)
 {
-    [AllowAnonymous]
+    [Authorize(Policy = "AppUser")]
     [HttpGet("company/{companyId:long}")]
     public Task<IActionResult> GetByCompany(long companyId, CancellationToken ct) =>
         ExecuteWithLogAsync(logRepository, unitOfWork, nameof(CategoriesController), nameof(GetByCompany), async () =>

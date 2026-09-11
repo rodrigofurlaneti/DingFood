@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using DingFood.Application.Abstractions.Messaging;
 using DingFood.Domain.Constants;
@@ -20,6 +20,7 @@ namespace DingFood.Application.Features.Integrations.Asaas.WebhookLog.Receive
         private readonly ICustomerOrderRepository _orderRepository;
         private readonly TimeProvider _timeProviderCustom;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly DingFood.Application.Abstractions.Tenancy.IPublicWorkplaceScope? _scope;
 
         public ReceiveAsaasWebhookCommandHandler(
             IAsaasIntegrationPaymentRepository paymentRepository,
@@ -29,7 +30,7 @@ namespace DingFood.Application.Features.Integrations.Asaas.WebhookLog.Receive
             ICustomerOrderRepository orderRepository,
             TimeProvider timeProviderCustom,
             ILogTrackerRepository logRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork, DingFood.Application.Abstractions.Tenancy.IPublicWorkplaceScope? scope = null)
             : base(logRepository, unitOfWork)
         {
             _paymentRepository = paymentRepository;
@@ -38,7 +39,7 @@ namespace DingFood.Application.Features.Integrations.Asaas.WebhookLog.Receive
             _branchRepository = branchRepository;
             _orderRepository = orderRepository;
             _timeProviderCustom = timeProviderCustom;
-            _unitOfWork = unitOfWork;
+            _unitOfWork = unitOfWork; _scope = scope;
         }
 
         public override async Task<Result> Handle(ReceiveAsaasWebhookCommand request, CancellationToken cancellationToken)
@@ -76,6 +77,7 @@ namespace DingFood.Application.Features.Integrations.Asaas.WebhookLog.Receive
                         return Result.Success();
                     }
 
+                    if (_scope is not null) await _scope.BindAsync(payment.BranchId, null, null, cancellationToken);
                     var branch = await _branchRepository.GetByIdAsync(payment.BranchId, cancellationToken);
                     if (branch is null || !branch.IsActive)
                         return Result.Failure(new Error("Asaas.InvalidWebhookToken", "Configuração do webhook indisponível."));

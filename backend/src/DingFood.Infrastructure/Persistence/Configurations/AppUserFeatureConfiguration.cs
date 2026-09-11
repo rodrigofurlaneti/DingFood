@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using DingFood.Domain.Entities;
 
@@ -15,10 +15,11 @@ internal sealed class AppUserFeatureConfiguration : IEntityTypeConfiguration<App
         builder.Property(x => x.CreatedAt).HasColumnType("datetime(6)").IsRequired();
         builder.Property(x => x.UpdatedAt).HasColumnType("datetime(6)");
 
-        builder.HasIndex(x => new { x.AppUserId, x.AppFeatureId })
+        builder.HasIndex(x => new { x.AppUserId, x.AppFeatureId, x.BranchId })
             .IsUnique().HasFilter("[IsActive] = 1")
             .HasDatabaseName("UQ_AppUserFeature_AppUserId_AppFeatureId");
 
+        builder.HasOne<Branch>().WithMany().HasForeignKey(x => x.BranchId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<AppUser>().WithMany().HasForeignKey(x => x.AppUserId)
             .HasConstraintName("FK_AppUserFeature_AppUser").OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<AppFeature>().WithMany().HasForeignKey(x => x.AppFeatureId)

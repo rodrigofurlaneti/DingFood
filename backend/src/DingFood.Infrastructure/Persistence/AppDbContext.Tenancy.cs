@@ -10,12 +10,22 @@ public sealed partial class AppDbContext
 {
     private long? ActiveCompanyId => _currentTenant?.CompanyId;
 
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => SaveChangesAsync(true, cancellationToken);
+    public override int SaveChanges() => SaveChanges(true);
+    public override int SaveChanges(bool acceptAllChangesOnSuccess) => SaveChangesAsync(acceptAllChangesOnSuccess).GetAwaiter().GetResult();
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
+        var newCompanies = ChangeTracker.Entries<Company>().Where(e => e.State == EntityState.Added).Select(e => e.Entity).ToArray();
+        foreach (var company in newCompanies)
+        {
+            if (ChangeTracker.Entries<CompanyBrand>().Any(e => ReferenceEquals(e.Entity.Company, company))) continue;
+            var brand = Brand.Create(company.BusinessGroup, company.TradeName);
+            Set<CompanyBrand>().Add(CompanyBrand.Create(company, brand));
+        }
+        await AssignBrandOwnershipAsync(cancellationToken);
         if (ActiveCompanyId.HasValue) await ValidateTenantWritesAsync(cancellationToken);
-        return await base.SaveChangesAsync(cancellationToken);
+        return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
     }
-
     private async Task ValidateTenantWritesAsync(CancellationToken ct)
     {
         ChangeTracker.DetectChanges();
@@ -24,6 +34,27 @@ public sealed partial class AppDbContext
         {
             // Authentication/audit records are owned by the identity, not by its selected company.
             if (entry.Entity is LogTracker or AccessLog or RefreshToken or BusinessGroup or AppUserCompany) continue;
+            if (entry.Entity is AppUserBranch grant && entry.State == EntityState.Added && grant.AppUserId == _currentTenant?.UserId &&
+                grant.Branch is { } createdBranch && Entry(createdBranch).State == EntityState.Added && createdBranch.CompanyId == ActiveCompanyId) continue;
+            if (entry.State != EntityState.Added && !IdentityTables.Contains(entry.Metadata.ClrType.Name) && !SystemTables.Contains(entry.Metadata.ClrType.Name))
+            {
+                var key = entry.Metadata.FindPrimaryKey();
+                if (key?.Properties.Count == 1 && entry.Property(key.Properties[0].Name).OriginalValue is long originalId)
+                {
+                    var check = typeof(AppDbContext).GetMethod(nameof(IsVisibleAsync), BindingFlags.Instance | BindingFlags.NonPublic)!.MakeGenericMethod(entry.Metadata.ClrType);
+                    if (!await (Task<bool>)check.Invoke(this, [originalId, ct])!) throw new TenantAccessException();
+                }
+            }
+            foreach (var (propertyName, scopeId) in new[] { ("BrandId", ActiveBrandId), ("BranchId", ActiveBranchId) })
+            {
+                if (!scopeId.HasValue || entry.Metadata.FindProperty(propertyName) is null) continue;
+                var scopedProperty = entry.Property(propertyName);
+                if (scopedProperty.CurrentValue is long current && current != scopeId ||
+                    entry.State != EntityState.Added && scopedProperty.OriginalValue is long previous && previous != scopeId)
+                    throw new TenantAccessException();
+            }
+            if (entry.Entity is Branch scopedBranch && ActiveBranchId.HasValue && entry.State != EntityState.Added && scopedBranch.Id != ActiveBranchId)
+                throw new TenantAccessException();
             if (entry.Metadata.FindProperty("CompanyId") is not null)
             {
                 var property = entry.Property("CompanyId");
@@ -41,6 +72,8 @@ public sealed partial class AppDbContext
                 if (entries.Any(parent => parent.State == EntityState.Added &&
                     parent.Metadata == fk.PrincipalEntityType && Equals(parent.Property(fk.PrincipalKey.Properties[0].Name).CurrentValue, value))) continue;
                 // UserRole grants intentionally refer to an identity whose home company can differ.
+                if (entry.Entity is AppUserFeature feature && fk.PrincipalEntityType.ClrType == typeof(AppUser) &&
+                    await Set<AppUserBranch>().AnyAsync(g => g.AppUserId == feature.AppUserId && g.BranchId == ActiveBranchId && g.IsActive, ct)) continue;
                 if (entry.Entity is UserRole && fk.PrincipalEntityType.ClrType == typeof(AppUser)) continue;
                 var method = typeof(AppDbContext).GetMethod(nameof(IsVisibleAsync), BindingFlags.Instance | BindingFlags.NonPublic)!
                     .MakeGenericMethod(fk.PrincipalEntityType.ClrType);
@@ -50,7 +83,7 @@ public sealed partial class AppDbContext
     }
 
     private Task<bool> IsVisibleAsync<T>(long id, CancellationToken ct) where T : class
-        => Set<T>().AsNoTracking().AnyAsync(x => EF.Property<long>(x, "Id") == id, ct);
+        => Set<T>().AsNoTracking().AnyAsync(x => EF.Property<long>(x, Model.FindEntityType(typeof(T))!.FindPrimaryKey()!.Properties[0].Name) == id, ct);
 
     private void ConfigureAdditionalTenantFilters(ModelBuilder modelBuilder)
     {

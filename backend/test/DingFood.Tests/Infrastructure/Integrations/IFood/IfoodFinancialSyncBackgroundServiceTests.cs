@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,7 +51,7 @@ public sealed class IfoodFinancialSyncBackgroundServiceTests
 
         _service = new IfoodFinancialSyncBackgroundService(rootProvider, _logger);
 
-        _settingRepository.GetEnabledCompanyIdsAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<long>)[1]);
+        _settingRepository.GetEnabledScopesAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<IfoodCompanyScope>)[new(1, null)]);
         _mappingRepository.GetByCompanyAsync(1, Arg.Any<CancellationToken>())
             .Returns((IReadOnlyDictionary<long, IfoodMerchantMapping>)new Dictionary<long, IfoodMerchantMapping>());
     }
@@ -80,7 +80,7 @@ public sealed class IfoodFinancialSyncBackgroundServiceTests
     [Fact]
     public async Task RunCycleAsync_NoEnabledCompanies_ShouldNotDispatchAnyCommand()
     {
-        _settingRepository.GetEnabledCompanyIdsAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<long>)[]);
+        _settingRepository.GetEnabledScopesAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<IfoodCompanyScope>)[]);
 
         await RunCycleAsync();
 
@@ -245,6 +245,6 @@ public sealed class IfoodFinancialSyncBackgroundServiceTests
         var act = () => (Task)method.Invoke(_service, [cts.Token])!;
 
         await act.Should().NotThrowAsync();
-        await _settingRepository.DidNotReceive().GetEnabledCompanyIdsAsync(Arg.Any<CancellationToken>());
+        await _settingRepository.DidNotReceive().GetEnabledScopesAsync(Arg.Any<CancellationToken>());
     }
 }

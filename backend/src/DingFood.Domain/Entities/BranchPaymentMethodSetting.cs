@@ -1,9 +1,10 @@
-﻿using DingFood.Domain.Primitives;
+using DingFood.Domain.Primitives;
 namespace DingFood.Domain.Entities
 {
     public sealed class BranchPaymentMethodSetting : AggregateRoot
     {
         public long CompanyId { get; private set; }
+    public long? BrandId { get; private set; }
         public long? BranchId { get; private set; }
         public bool EnablePix { get; private set; }
         public bool EnableBoleto { get; private set; }

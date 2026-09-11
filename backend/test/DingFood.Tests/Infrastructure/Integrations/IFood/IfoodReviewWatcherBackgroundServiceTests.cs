@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -48,7 +48,7 @@ public sealed class IfoodReviewWatcherBackgroundServiceTests
 
         _service = new IfoodReviewWatcherBackgroundService(rootProvider, _logger);
 
-        _settingRepository.GetEnabledCompanyIdsAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<long>)[1]);
+        _settingRepository.GetEnabledScopesAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<IfoodCompanyScope>)[new(1, null)]);
         _tokenProvider.GetAccessTokenAsync(1, Arg.Any<CancellationToken>()).Returns("tok");
     }
 
@@ -82,7 +82,7 @@ public sealed class IfoodReviewWatcherBackgroundServiceTests
     [Fact]
     public async Task RunCycleAsync_NoEnabledCompanies_ShouldNotCallReviewClient()
     {
-        _settingRepository.GetEnabledCompanyIdsAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<long>)[]);
+        _settingRepository.GetEnabledScopesAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<IfoodCompanyScope>)[]);
 
         await RunCycleAsync();
 
@@ -282,6 +282,6 @@ public sealed class IfoodReviewWatcherBackgroundServiceTests
         var act = () => (Task)method.Invoke(_service, [cts.Token])!;
 
         await act.Should().NotThrowAsync();
-        await _settingRepository.DidNotReceive().GetEnabledCompanyIdsAsync(Arg.Any<CancellationToken>());
+        await _settingRepository.DidNotReceive().GetEnabledScopesAsync(Arg.Any<CancellationToken>());
     }
 }

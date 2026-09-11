@@ -1,61 +1,65 @@
-# Dark Kitchen: empresas e integrações independentes
+# Dark Kitchen: empresas, marcas e filiais
 
-`businessgroup → company → branch` é a hierarquia administrativa. `CompanyId` continua sendo a fronteira operacional; os filtros não usam o grupo para compartilhar catálogo, estoque, pedidos ou integrações.
+## Cadastro na interface
 
-## Acesso e operação
+Abra o seletor do cabeçalho e entre em **Empresas, marcas e filiais**. Escolha a empresa antes de cadastrar:
 
-- O cadastro existente cria uma empresa com seu grupo e um vínculo explícito em `appusercompany` para o administrador. Novos usuários também recebem o vínculo com sua empresa de origem.
-- `appuser.CompanyId` permanece como empresa de origem por compatibilidade. O acesso operacional depende de `appusercompany`, e a empresa selecionada não altera a identidade do usuário.
-- Administradores podem criar empresas no mesmo grupo pela página **Gerenciar empresas**. A criação concede acesso administrativo somente ao criador. Os demais usuários precisam de concessão explícita.
-- Um administrador da empresa selecionada pode conceder ou revogar o acesso de outros usuários do mesmo grupo. Perfil e funcionário são definidos por empresa. O vínculo de funcionário, quando informado, precisa pertencer à empresa selecionada.
-- A empresa de origem permanece o ponto de entrada do login. Para remover integralmente esse acesso, desative o usuário; a interface não permite revogar isoladamente o vínculo de origem.
-- A criação da empresa inclui uma primeira filial. Configure equipe, funcionário de autoatendimento, caixa, produtos e integração para a nova operação antes de receber pedidos.
+- **Nova empresa**: cadastra outro CNPJ no grupo, com sua marca inicial e primeira filial.
+- **Nova marca**: informa o nome comercial e a primeira filial dessa marca na empresa ativa.
+- **Nova filial**: escolhe uma marca do grupo e cadastra outra unidade na empresa ativa. Permite vincular explicitamente a mesma marca a outro CNPJ do grupo.
 
-## Sessão e endpoints
+Depois do cadastro, selecione empresa, marca e filial no cabeçalho. Configure equipe, caixa, catálogo e integrações da operação. O criador recebe acesso administrativo à filial; outros usuários precisam de concessão explícita em **Acesso à filial selecionada**. O funcionário informado deve pertencer exatamente àquela filial.
 
-`GET /api/companies/allowed` lista as empresas autorizadas. `POST /api/companies/switch`, com `{ "targetCompanyId": 20 }`, valida o vínculo e emite um JWT com `companyId`, `businessGroupId`, permissões e funcionário da empresa selecionada. A renovação em `/api/auth/refresh` aceita `companyId` e revalida a associação antes de emitir outro token.
+## Modelo e isolamento
 
-O servidor também valida `X-Company-Id` em cada requisição autenticada e recompõe as permissões com os registros atuais. Pertencer ao grupo não concede acesso às outras empresas. Tokens de clientes não autorizam os endpoints administrativos de empresas.
+O grupo reúne empresas e marcas. `CompanyBrand` estabelece quais marcas operam em cada CNPJ. Cada `Branch` pertence a uma empresa e a uma marca. Uma marca pode ter várias filiais e operar em vários CNPJs, mediante vínculo explícito.
 
-`POST /api/companies/group` cria uma empresa; `GET /api/companies/group/users` lista usuários do grupo para concessão; `PUT /api/companies/access` recebe `appUserId`, `roleId`, `employeeId` opcional e `enabled` para a empresa ativa. Esses endpoints exigem o perfil Administrador.
+Produtos, categorias, complementos, fornecedores e demais cadastros comerciais são separados por **empresa e marca**. Filiais da mesma marca e empresa usam o mesmo catálogo. Estoque operacional, pedidos, mesas, comandas, funcionários, caixa e turnos são separados por **filial**, herdando também empresa e marca. O saldo usado na venda vem de `StockItem` da filial ativa; movimentos usam o ID real desse estoque.
 
-O frontend só monta telas operacionais depois de validar empresa e filial. A troca cancela e limpa o TanStack Query, reinicia a filial e carrega um novo documento, descartando formulários, gavetas e respostas anteriores. Requisições antigas não são repetidas em outra empresa durante a renovação do token.
+Todas as entidades mapeadas têm uma classificação explícita no modelo. Entidades filhas herdam o filtro do proprietário, por exemplo item → pedido → filial e movimento → estoque → filial. A inicialização do modelo falha se uma entidade nova ficar sem classificação. O [inventário completo](tenant-entity-inventory.md) é gerado pelo teste do modelo.
+
+Identidades e vínculos organizacionais têm regras próprias: pertencer ao grupo não concede acesso às demais operações. Dicionários técnicos, como status e unidades de medida, continuam como referências do sistema. Eles não contêm os cadastros operacionais de uma cozinha.
+
+A gravação verifica proprietário e referências, inclusive alterações e exclusões, para impedir a associação a produtos, funcionários ou outros registros fora do contexto. O mesmo CPF pode identificar cadastros de funcionário em filiais diferentes, sem compartilhar o vínculo de trabalho.
+
+## Sessão e permissões
+
+`AppUserCompany` concede acesso à empresa. `AppUserBranch` concede acesso à filial, com funcionário e perfil específicos. O middleware revalida esses vínculos em cada requisição e recompõe os claims de marca, filial, funcionário, perfil e permissões.
+
+O frontend envia `X-Company-Id` e `X-Branch-Id`. Trocar empresa ou filial limpa o cache e os formulários. Respostas antigas não atualizam a nova operação. QR codes, pedidos públicos e webhooks resolvem sua operação antes de executar consultas e gravações; um contexto já vinculado não pode mudar para outra operação.
+
+Endpoints:
+
+- `GET /api/companies/allowed` e `POST /api/companies/switch`: empresas autorizadas e troca de empresa.
+- `POST /api/companies/group`: outro CNPJ no grupo.
+- `GET /api/workplaces`: somente filiais autorizadas para o usuário.
+- `GET /api/workplaces/brands`: marcas disponíveis no grupo, para administradores.
+- `POST /api/workplaces`: cria marca com filial ou filial de uma marca existente.
+- `PUT /api/workplaces/access`: concede, atualiza ou revoga acesso à filial especificada.
+
+Os perfis são definidos pela empresa e atribuídos por filial. Os vínculos migrados preservam os múltiplos perfis legados somente nas filiais já autorizadas. Ao editar o acesso pela nova tela, o perfil escolhido passa a valer especificamente naquela filial.
 
 ## Integrações
 
-O polling processa até quatro empresas simultaneamente, com um escopo de DI e um DbContext por empresa. Os demais workers iFood também separam os escopos por empresa. Tokens são armazenados por CompanyId, e o provedor recusa credenciais de outra empresa quando há contexto ativo.
+Os workers iFood usam contexto de empresa e marca. O cache de token inclui ambas. Merchants e eventos são resolvidos para a filial correta; a assinatura é conferida contra as configurações correspondentes. Os alertas operacionais são filtrados pela filial. Keeta e Asaas também vinculam eventos e processamentos à operação correspondente.
 
-Eventos preservam o MerchantId. A resolução rejeita merchants não pertencentes ao contexto e mapeamentos ambíguos. O índice único de MerchantUuid impede que o mesmo merchant seja associado a duas filiais. Eventos com o mesmo identificador em empresas distintas mantêm deduplicação separada.
+## Atualização do banco
 
-Filtros de leitura cobrem proprietários diretos e entidades filhas de catálogo, estoque, pedidos e caixa. A persistência verifica CompanyId e referências a entidades filtradas, bloqueando vínculos operacionais cruzados. As origens de pedido globais existentes continuam disponíveis como códigos de referência.
+A API aplica migrations na inicialização. A versão inclui:
 
-## Migração MySQL 8
+1. `202609100001_AddBusinessGroups`: grupos e vínculos explícitos de empresa.
+2. `202609100002_AddBrandsAndBranchAccess`: marcas, vínculos empresa/marca, acesso por filial e escopo dos cadastros existentes.
+3. `202609100003_CompleteLegacyOperationalSchema`: compatibilidade com estruturas antigas de cartões salvos e tabelas de fechamento já previstas pelo modelo e pelos scripts SQL anteriores.
 
-O recurso SQL está em `backend/src/DingFood.Infrastructure/Persistence/Migrations/BusinessGroups.sql`, embutido na migration `202609100001_AddBusinessGroups`. A API existente executa migrations na inicialização: a primeira inicialização da versão nova aplicará essa alteração ao banco configurado.
+Cada empresa existente recebe uma marca inicial usando seu nome fantasia. Seus registros mantêm IDs e são vinculados a essa marca. Funcionários recebem somente sua filial de origem; administradores mantêm as filiais das empresas já autorizadas. Novos cadastros não copiam a equipe.
 
-A migração foi preparada a partir da estrutura do dump MySQL 8.4 fornecido. O dump original não foi alterado ou importado. A migração não foi executada em um servidor MySQL nesta sessão; o teste de persistência utilizou SQLite com conexões separadas.
+Reinicie a API com a versão atualizada e recarregue a interface. A aplicação de DDL no MySQL pode fazer commits implícitos; o procedimento de atualização deve preservar um backup e interromper gravações da versão antiga. A reversão de dados requer restauração, pois remover vínculos apagaria informação de propriedade.
 
-Antes da atualização, preserve um backup verificado e pause gravações da aplicação antiga. Verifique duplicidades:
+## Validação realizada
 
-```sql
-SELECT Cnpj, COUNT(*) FROM company GROUP BY Cnpj HAVING COUNT(*) > 1;
-SELECT MerchantUuid, COUNT(*) FROM ifoodmerchantmapping
-WHERE MerchantUuid IS NOT NULL AND TRIM(MerchantUuid) <> ''
-GROUP BY MerchantUuid HAVING COUNT(*) > 1;
-```
+- Solução backend: 6.606 testes unitários/persistência, 300 cenários, 14 testes de arquitetura e 3 E2E aprovados; 9 E2E dependentes de ambiente foram ignorados.
+- MySQL 8.0.43 isolado: estrutura das 112 tabelas do dump, somente dados fictícios, aplicação das migrations, conferência de todas as colunas mapeadas, manutenção de acesso legado, criação de marca e empresa com retry habilitado.
+- TypeScript, build Vite e Playwright: envio dos formulários de marca e filial, troca de empresa, descarte de estado anterior e seletor em desktop/celular.
+- Nenhum banco da aplicação ou serviço externo recebeu dados desses testes.
 
-Se houver duplicidades, resolva a titularidade antes de aplicar os índices únicos. O script não escolhe arbitrariamente um proprietário nem remove registros operacionais.
-
-Cada empresa existente recebe um grupo próprio e mantém seus IDs. Os usuários recebem os vínculos existentes. `BusinessGroupId` torna-se obrigatório após o preenchimento. O script pode ser repetido com as gravações pausadas; não redefine associações já preenchidas. Como MySQL realiza commits implícitos de DDL, uma falha pode deixar uma etapa parcialmente aplicada: mantenha a aplicação parada, corrija a causa e execute novamente. O rollback de dados exige restauração do backup, não exclusão automática de grupos ou vínculos.
-
-## Validação
-
-```powershell
-dotnet test backend/DingFood.sln
-cd frontend
-node node_modules/typescript/bin/tsc -b
-node node_modules/vite/bin/vite.js build
-node node_modules/@playwright/test/cli.js test --config playwright.companies.config.ts
-```
-
-`DingFood.Tests` foi incluído na solução para que `dotnet test` execute também os testes unitários e de persistência. Os cenários novos cobrem permissões, revogação, JWT, escrita cruzada, credenciais concorrentes, eventos de dois merchants com persistência real e a troca de contexto no navegador. Os serviços externos são simulados nos testes; não foram enviadas publicações ou pedidos ao iFood real.
+O teste MySQL é opt-in (`DINGFOOD_ISOLATED_MYSQL_TEST=1`) e usa exclusivamente a instância isolada na porta 33197; na suíte normal ele fica ignorado.

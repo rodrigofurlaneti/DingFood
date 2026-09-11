@@ -1,4 +1,4 @@
-﻿using DingFood.Application.Abstractions.Messaging;
+using DingFood.Application.Abstractions.Messaging;
 using DingFood.Domain.Entities;
 using DingFood.Domain.Exceptions;
 using DingFood.Domain.Primitives;
@@ -159,7 +159,7 @@ internal sealed class AddOrderItemComplementCommandHandler : BaseCommandHandler<
 
         var linkedMovementEmployeeId = employeeId is > 0 ? employeeId : null;
         var linkedMovementResult = StockMovement.Create(
-            stockItemId: linkedStock.ProductId,
+            stockItemId: linkedStock.StockItemId,
             stockMovementTypeId: 2, // Tipo: Venda/Saída
             purchaseItemId: null,
             orderItemId: item.Id,

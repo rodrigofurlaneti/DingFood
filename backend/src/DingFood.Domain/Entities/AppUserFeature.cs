@@ -1,9 +1,10 @@
-﻿using DingFood.Domain.Primitives;
+using DingFood.Domain.Primitives;
 
 namespace DingFood.Domain.Entities;
 
 public sealed class AppUserFeature : Entity
 {
+    public long? BranchId { get; private set; }
     public long AppUserId { get; private set; }
     public long AppFeatureId { get; private set; }
     public DateTime CreatedAt { get; private set; }

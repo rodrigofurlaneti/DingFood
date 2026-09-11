@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +30,8 @@ public static class DependencyInjection
     {
         services.AddHttpContextAccessor();
         services.AddScoped<CurrentTenantService>();
+        services.AddScoped<IPublicWorkplaceScope, PublicWorkplaceScope>();
+        services.AddScoped<IWorkplaceAccessService, WorkplaceAccessService>();
         services.AddScoped<ICurrentTenantService>(sp => sp.GetRequiredService<CurrentTenantService>());
 
         var connectionString = configuration.GetConnectionString("DefaultConnection");

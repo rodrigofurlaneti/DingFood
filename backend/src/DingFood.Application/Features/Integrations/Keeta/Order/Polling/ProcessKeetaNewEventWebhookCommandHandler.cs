@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using DingFood.Application.Abstractions.Integrations.Keeta;
@@ -14,19 +14,20 @@ namespace DingFood.Application.Features.Integrations.Keeta.Order.Polling
         private readonly IKeetaCredentialsResolver _credentialsResolver;
         private readonly IKeetaOrderEventProcessor _eventProcessor;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly DingFood.Application.Abstractions.Tenancy.IPublicWorkplaceScope? _scope;
 
         public ProcessKeetaNewEventWebhookCommandHandler(
             IKeetaIntegrationMerchantMappingRepository mappingRepository,
             IKeetaCredentialsResolver credentialsResolver,
             IKeetaOrderEventProcessor eventProcessor,
             ILogTrackerRepository logRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork, DingFood.Application.Abstractions.Tenancy.IPublicWorkplaceScope? scope = null)
             : base(logRepository, unitOfWork)
         {
             _mappingRepository = mappingRepository;
             _credentialsResolver = credentialsResolver;
             _eventProcessor = eventProcessor;
-            _unitOfWork = unitOfWork;
+            _unitOfWork = unitOfWork; _scope = scope;
         }
 
         public override async Task<Result> Handle(ProcessKeetaNewEventWebhookCommand request, CancellationToken cancellationToken)
@@ -48,6 +49,7 @@ namespace DingFood.Application.Features.Integrations.Keeta.Order.Polling
                     if (mapping is null)
                         return Result.Failure(new Error("Keeta.UnknownMerchant", "Nenhum merchant mapeado para este X-App-MerchantId."));
 
+                    if (_scope is not null) await _scope.BindAsync(mapping.BranchId, null, null, cancellationToken);
                     var signatureError = await ValidateSignatureAsync(mapping.CompanyId, mapping.BranchId, request.RawPayload, request.Signature, cancellationToken);
                     if (signatureError is not null)
                         return Result.Failure(signatureError);

@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,7 +52,7 @@ public sealed class IfoodOrderPollingBackgroundServiceTests
     [Fact]
     public async Task RunCycleAsync_NoEnabledCompanies_ShouldNotDispatchAnyCommand()
     {
-        _settingRepository.GetEnabledCompanyIdsAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<long>)[]);
+        _settingRepository.GetEnabledScopesAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<IfoodCompanyScope>)[]);
 
         await RunCycleAsync();
 
@@ -62,7 +62,7 @@ public sealed class IfoodOrderPollingBackgroundServiceTests
     [Fact]
     public async Task RunCycleAsync_MultipleCompanies_ShouldDispatchOneCommandPerCompany()
     {
-        _settingRepository.GetEnabledCompanyIdsAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<long>)[1, 2]);
+        _settingRepository.GetEnabledScopesAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<IfoodCompanyScope>)[new(1, null), new(2, null)]);
 
         await RunCycleAsync();
 
@@ -73,7 +73,7 @@ public sealed class IfoodOrderPollingBackgroundServiceTests
     [Fact]
     public async Task RunCycleAsync_OneCompanyThrows_ShouldLogAndStillDispatchRemaining()
     {
-        _settingRepository.GetEnabledCompanyIdsAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<long>)[1, 2]);
+        _settingRepository.GetEnabledScopesAsync(Arg.Any<CancellationToken>()).Returns((IReadOnlyCollection<IfoodCompanyScope>)[new(1, null), new(2, null)]);
         _mediator.Send(Arg.Is<SyncIfoodOrdersCommand>(c => c.CompanyId == 1), Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("falha simulada"));
 
@@ -93,6 +93,6 @@ public sealed class IfoodOrderPollingBackgroundServiceTests
         var act = () => (Task)method.Invoke(_service, [cts.Token])!;
 
         await act.Should().NotThrowAsync();
-        await _settingRepository.DidNotReceive().GetEnabledCompanyIdsAsync(Arg.Any<CancellationToken>());
+        await _settingRepository.DidNotReceive().GetEnabledScopesAsync(Arg.Any<CancellationToken>());
     }
 }

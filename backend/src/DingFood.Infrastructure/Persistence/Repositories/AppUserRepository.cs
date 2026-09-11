@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using DingFood.Domain.Entities;
 using DingFood.Domain.Repositories;
 
@@ -53,5 +53,10 @@ internal sealed class AppUserRepository(AppDbContext context) : IAppUserReposito
     {
         await context.AppUsers.AddAsync(entity, cancellationToken);
         await context.AppUserCompanies.AddAsync(AppUserCompany.CreateHomeAccess(entity).Value, cancellationToken);
+        if (entity.EmployeeId is { } employeeId)
+        {
+            var employee = await context.Employees.SingleOrDefaultAsync(e => e.Id == employeeId && e.IsActive, cancellationToken);
+            if (employee is not null) context.Add(AppUserBranch.Create(entity, employee.BranchId));
+        }
     }
 }

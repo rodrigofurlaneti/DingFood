@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using DingFood.Domain.Entities;
@@ -131,9 +131,9 @@ namespace DingFood.Tests.Infrastructure.Persistence.Configurations
         }
 
         [Fact]
-        public void Configure_ShouldNotDefineForeignKeys()
+        public void Configure_ShouldDeclareBrandForeignKey()
         {
-            EntityType.GetForeignKeys().Should().BeEmpty();
+            EntityType.GetForeignKeys().Should().NotBeEmpty();
         }
     }
 }

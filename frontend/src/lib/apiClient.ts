@@ -1,4 +1,4 @@
-﻿import { useAuthStore } from "../stores/authStore";
+import { useAuthStore } from "../stores/authStore";
 import type { ApiProblem, LoginResponse } from "./types";
 
 export class ApiError extends Error {
@@ -47,7 +47,7 @@ async function tryRefresh(): Promise<boolean> {
 }
 
 export async function apiUpload<T>(path: string, formData: FormData, retry = true): Promise<T> {
-    const { accessToken, companyId } = useAuthStore.getState();
+    const { accessToken, companyId, branchId } = useAuthStore.getState();
 
     let response: Response;
     try {
@@ -60,10 +60,10 @@ export async function apiUpload<T>(path: string, formData: FormData, retry = tru
         throw new ApiError(0, "Network.Unreachable", "Não foi possível conectar à API — ela está rodando?");
     }
 
-    if (useAuthStore.getState().companyId !== companyId) throw new ApiError(409, "Company.ContextChanged", "A empresa ativa foi alterada.");
+    if (useAuthStore.getState().companyId !== companyId || useAuthStore.getState().branchId !== branchId) throw new ApiError(409, "Company.ContextChanged", "A empresa ativa foi alterada.");
     if (response.status === 401 && retry) {
         const renewed = await tryRefresh();
-        if (useAuthStore.getState().companyId !== companyId) throw new ApiError(409, "Company.ContextChanged", "A empresa ativa foi alterada.");
+        if (useAuthStore.getState().companyId !== companyId || useAuthStore.getState().branchId !== branchId) throw new ApiError(409, "Company.ContextChanged", "A empresa ativa foi alterada.");
         if (renewed) return apiUpload<T>(path, formData, false);
         throw new ApiError(401, "Auth.SessionExpired", "Sessão expirada. Entre novamente.");
     }
@@ -123,14 +123,14 @@ async function handleUnauthorized<T>(retryFn: () => Promise<T>): Promise<T> {
 }
 
 export async function api<T>(path: string, init?: RequestInit, retry = true): Promise<T> {
-    const { accessToken, companyId } = useAuthStore.getState();
+    const { accessToken, companyId, branchId } = useAuthStore.getState();
 
     const response = await fetchJson(path, init, accessToken);
-    if (useAuthStore.getState().companyId !== companyId) throw new ApiError(409, "Company.ContextChanged", "A empresa ativa foi alterada.");
+    if (useAuthStore.getState().companyId !== companyId || useAuthStore.getState().branchId !== branchId) throw new ApiError(409, "Company.ContextChanged", "A empresa ativa foi alterada.");
 
     if (response.status === 401 && retry) {
         return handleUnauthorized(() => {
-            if (useAuthStore.getState().companyId !== companyId) throw new ApiError(409, "Company.ContextChanged", "A empresa ativa foi alterada.");
+            if (useAuthStore.getState().companyId !== companyId || useAuthStore.getState().branchId !== branchId) throw new ApiError(409, "Company.ContextChanged", "A empresa ativa foi alterada.");
             return api<T>(path, init, false);
         });
     }
@@ -145,6 +145,6 @@ export async function api<T>(path: string, init?: RequestInit, retry = true): Pr
 }
 
 function companyHeaders(): Record<string, string> {
-    const companyId = useAuthStore.getState().companyId;
-    return companyId ? { "X-Company-Id": String(companyId) } : {};
+    const { companyId, branchId } = useAuthStore.getState();
+    return companyId ? { "X-Company-Id": String(companyId), ...(branchId ? { "X-Branch-Id": String(branchId) } : {}) } : {};
 }
