@@ -12,6 +12,28 @@ public sealed class CustomerOrder : AggregateRoot
 
     private readonly List<OrderItem> _items = [];
     public long BranchId { get; private set; }
+    public long? DeliveryDriverId { get; private set; }
+    public decimal DeliveryFeeAmount { get; private set; }
+    public decimal? DeliveryDistanceKm { get; private set; }
+    public decimal? DeliveryPricePerKm { get; private set; }
+    public decimal? DeliveryDailyAmount { get; private set; }
+    public string? DeliveryPaymentModel { get; private set; }
+    public DateTime? DeliveryFeeCalculatedAt { get; private set; }
+    public string? DeliveryTimeZoneId { get; private set; }
+    public void FreezeDeliveryFee(DeliveryQuote quote, DateTime utcNow, string timeZoneId)
+    {
+        if (DeliveryFeeCalculatedAt.HasValue) throw new InvalidOperationException("A taxa de entrega já foi gravada.");
+        DeliveryFeeAmount = quote.Amount; DeliveryDistanceKm = quote.DistanceKm; DeliveryPricePerKm = quote.PricePerKm;
+        DeliveryDailyAmount = quote.DailyAmount; DeliveryPaymentModel = quote.Model; DeliveryFeeCalculatedAt = utcNow; DeliveryTimeZoneId = timeZoneId;
+        RecalculateTotals();
+    }
+    public void AssignDeliveryDriver(DeliveryDriver driver)
+    {
+        if (!driver.IsActive || driver.BranchId != BranchId || DeliveryFeeCalculatedAt == null)
+            throw new ArgumentException("Motoboy inválido para esta filial ou pedido sem precificação própria.");
+        if (DeliveryDriverId.HasValue && DeliveryDriverId != driver.Id) throw new ArgumentException("Pedido já atribuído a outro motoboy.");
+        DeliveryDriverId = driver.Id;
+    }
     public long? DiningTableId { get; private set; }
     public long? ComandaId { get; private set; }
     public long EmployeeId { get; private set; }
@@ -425,6 +447,6 @@ public sealed class CustomerOrder : AggregateRoot
         SubtotalAmount = _items
             .Where(i => i.IsActive && i.OrderItemStatusId != OrderItemStatusIds.Cancelado)
             .Sum(i => i.TotalAmount);
-        TotalAmount = SubtotalAmount - DiscountAmount + ServiceFeeAmount;
+        TotalAmount = SubtotalAmount - DiscountAmount + ServiceFeeAmount + DeliveryFeeAmount;
     }
 }

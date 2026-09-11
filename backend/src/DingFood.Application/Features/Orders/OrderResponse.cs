@@ -47,4 +47,10 @@ public sealed record OrderResponse(
     string? CustomerName,
     string? CustomerPhone,
     string? DeliveryAddress,
-    IReadOnlyCollection<OrderItemResponse> Items);
+    IReadOnlyCollection<OrderItemResponse> Items)
+{
+    public decimal DeliveryFeeAmount { get; init; }
+    public decimal? DeliveryDistanceKm { get; init; }
+    public long? DeliveryDriverId { get; init; }
+    public string? DeliveryPaymentModel { get; init; }
+}

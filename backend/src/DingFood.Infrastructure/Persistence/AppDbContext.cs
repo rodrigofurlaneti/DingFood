@@ -6,7 +6,7 @@ using DingFood.Domain.Repositories;
 
 namespace DingFood.Infrastructure.Persistence;
 
-public sealed partial class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentTenantService? currentTenant = null)
+public sealed partial class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentTenantService? currentTenant = null, DingFood.Infrastructure.Delivery.IDeliveryGeocoder? deliveryGeocoder = null)
     : DbContext(options), IUnitOfWork
 {
     private readonly ICurrentTenantService? _currentTenant = currentTenant;

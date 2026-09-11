@@ -9,6 +9,14 @@ internal sealed class CustomerOrderConfiguration : IEntityTypeConfiguration<Cust
     public void Configure(EntityTypeBuilder<CustomerOrder> builder)
     {
         builder.ToTable("customerorder");
+        builder.Property(x => x.DeliveryDriverId).IsConcurrencyToken();
+        builder.HasOne<DeliveryDriver>().WithMany().HasForeignKey(x => x.DeliveryDriverId).OnDelete(DeleteBehavior.Restrict);
+        builder.Property(x => x.DeliveryFeeAmount).HasPrecision(18,2);
+        builder.Property(x => x.DeliveryDistanceKm).HasPrecision(18,6);
+        builder.Property(x => x.DeliveryPricePerKm).HasPrecision(18,2);
+        builder.Property(x => x.DeliveryDailyAmount).HasPrecision(18,2);
+        builder.Property(x => x.DeliveryPaymentModel).HasMaxLength(20);
+        builder.Property(x => x.DeliveryTimeZoneId).HasMaxLength(100);
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

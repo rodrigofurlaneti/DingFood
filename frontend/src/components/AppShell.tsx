@@ -20,6 +20,7 @@ const links = [
     { to: "/", label: "Salão", feature: "Salao" },
     { to: "/garcom", label: "Modo Garçom", feature: "Salao" },
     { to: "/delivery", label: "Delivery", feature: "Salao" },
+    { to: "/logistica", label: "Motoboys e taxas", feature: "Salao" },
     { to: "/preparo", label: "Preparo", feature: "Preparo" },
 ];
 

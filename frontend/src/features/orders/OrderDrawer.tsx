@@ -416,6 +416,8 @@ export function OrderDrawer({ orderId, onClose }: Props) {
                                 <span className="mono-num">− {formatBRL(order.discountAmount)}</span>
                             </div>
                         )}
+                        {(order.deliveryFeeAmount ?? 0) > 0 && <div className="ticket-row"><span>Entrega</span><span className="mono-num">{formatBRL(order.deliveryFeeAmount!)}</span></div>}
+                        {order.deliveryPaymentModel && <a href="/logistica">Atribuir motoboy / consultar logística</a>}
                         {order.serviceFeeAmount > 0 && (
                             <div className="ticket-row" style={{ color: "var(--ink-dim)" }}>
                                 <span>Serviço (10%)</span>

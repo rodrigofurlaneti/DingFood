@@ -24,6 +24,13 @@ public sealed partial class AppDbContext
         }
         await AssignBrandOwnershipAsync(cancellationToken);
         if (ActiveCompanyId.HasValue) await ValidateTenantWritesAsync(cancellationToken);
+        try { await PriceDeliveriesAsync(cancellationToken); }
+        catch (ArgumentException ex)
+        {
+            // Audit logging also commits this context: never retry a rejected order implicitly.
+            ChangeTracker.Clear();
+            throw new DeliveryPricingException(ex.Message);
+        }
         return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
     }
     private async Task ValidateTenantWritesAsync(CancellationToken ct)

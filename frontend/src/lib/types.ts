@@ -48,6 +48,10 @@ export interface OrderResponse {
   subtotalAmount: number;
   discountAmount: number;
   serviceFeeAmount: number;
+  deliveryFeeAmount?: number;
+  deliveryDistanceKm?: number | null;
+  deliveryDriverId?: number | null;
+  deliveryPaymentModel?: string | null;
   totalAmount: number;
   partialPaidAmount: number;
   creditLimitAmount: number | null;

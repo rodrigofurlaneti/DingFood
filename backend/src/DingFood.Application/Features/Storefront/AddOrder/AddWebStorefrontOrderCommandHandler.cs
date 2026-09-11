@@ -69,10 +69,10 @@ namespace DingFood.Application.Features.Storefront.AddOrder
 
                         if (customerAddress != null)
                         {
-                            deliveryAddressFormatted = $"{customerAddress.Street}, Nº {customerAddress.Number}";
+                            deliveryAddressFormatted = $"{customerAddress.Street}, Nº {customerAddress.Number} - CEP {customerAddress.ZipCode}";
                             if (!string.IsNullOrWhiteSpace(customerAddress.Supplement))
                             {
-                                deliveryAddressFormatted += $" - {customerAddress.Supplement} - {customerAddress.ZipCode}";
+                                deliveryAddressFormatted += $" - {customerAddress.Supplement}";
                             }
                         }
                     }

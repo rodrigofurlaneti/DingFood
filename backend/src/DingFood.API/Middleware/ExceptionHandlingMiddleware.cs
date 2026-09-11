@@ -22,6 +22,11 @@ public sealed class ExceptionHandlingMiddleware(
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
             await context.Response.WriteAsJsonAsync(new ProblemDetails { Status = 403, Title = "Tenant.Forbidden", Detail = "O recurso não pertence à empresa ativa." }, context.RequestAborted);
         }
+        catch (DingFood.Domain.Exceptions.DeliveryPricingException ex)
+        {
+            context.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+            await context.Response.WriteAsJsonAsync(new ProblemDetails { Status = 422, Title = "Delivery.Pricing", Detail = ex.Message }, context.RequestAborted);
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unhandled exception processing {Method} {Path}",
