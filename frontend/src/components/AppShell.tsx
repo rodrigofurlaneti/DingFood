@@ -1,27 +1,18 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CompanySelector } from "./CompanySelector";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/authStore";
 import { useThemeStore } from "../stores/themeStore";
-import { CashDrawer } from "../features/cash/CashDrawer";
-import { ShiftDrawer } from "../features/shift/ShiftDrawer";
 import { useMyFeatures } from "../features/access/hooks";
 import { IFoodAlertsBell } from "./IFoodAlertsBell";
-import logoAsaas from "../image/asaas.png"; 
-import logoKeeta from "../image/keeta.png";
-import logoIFood from "../image/logoifood.jpg";
-
-// Importando os dois logos
 import logoDark from "../image/logodark.png";
 import logoLight from "../image/logoligth.png";
 
 const links = [
     { to: "/", label: "Salão", feature: "Salao" },
-    { to: "/garcom", label: "Modo Garçom", feature: "Salao" },
-    { to: "/delivery", label: "Delivery", feature: "Salao" },
-    { to: "/logistica", label: "Motoboys e taxas", feature: "Salao" },
-    { to: "/preparo", label: "Preparo", feature: "Preparo" },
+    { to: "/garcom", label: "Garçom", feature: "Salao" },
+    { to: "/preparo", label: "Preparo", feature: "Preparo" }
 ];
 
 export function AppShell() {
@@ -29,8 +20,6 @@ export function AppShell() {
     const queryClient = useQueryClient();
     const { userName, companyId, clear } = useAuthStore();
     const { theme, toggleTheme } = useThemeStore();
-    const [cashOpen, setCashOpen] = useState(false);
-    const [shiftOpen, setShiftOpen] = useState(false);
     const [navOpen, setNavOpen] = useState(false);
     const featuresQuery = useMyFeatures();
     const access = featuresQuery.data;
@@ -101,135 +90,6 @@ export function AppShell() {
                     ))}
                     {access?.canManageAccess && (
                         <NavLink
-                            to="/integracoes/ifood"
-                            id="ifood-link"
-                            className="ifood-link"
-                            onClick={closeNav}
-                            title="Central de integrações iFood — pedidos, cardápio, financeiro, logística e mais"
-                            style={({ isActive }) => ({
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "8px",
-                                padding: "8px 14px",
-                                borderRadius: 8,
-                                textDecoration: "none",
-                                fontFamily: "var(--font-cond)",
-                                fontWeight: 600,
-                                letterSpacing: "0.05em",
-                                textTransform: "uppercase" as const,
-                                fontSize: "0.85rem",
-                                color: isActive ? "#fff" : "#EA1D2C",
-                                background: isActive ? "#EA1D2C" : "transparent",
-                                border: "1px solid #EA1D2C",
-                            })}
-                        >
-                            {({ isActive }) => (
-                                <>
-                                    <img className="topbar-logo"
-                                        src={logoIFood}
-                                        alt=""
-                                        aria-hidden="true"
-                                        style={{
-                                            width: 24,
-                                            height: 24,
-                                            objectFit: "contain",
-                                            filter: isActive ? "brightness(0) invert(1)" : "none",
-                                            transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease-in-out",
-                                        }}
-                                    />
-                                    <span>iFood</span>
-                                </>
-                            )}
-                        </NavLink>
-                    )}
-                    {access?.canManageAccess && (
-                        <NavLink
-                            to="/integracoes/asaas"
-                            id="asaas-link"
-                            className="asaas-link"
-                            onClick={closeNav}
-                            title="Integração Asaas — configurações, clientes, cobranças, cartões salvos e webhooks"
-                            style={({ isActive }) => ({
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "8px",
-                                padding: "8px 14px",
-                                borderRadius: 8,
-                                textDecoration: "none",
-                                fontFamily: "var(--font-cond)",
-                                fontWeight: 600,
-                                letterSpacing: "0.05em",
-                                textTransform: "uppercase" as const,
-                                fontSize: "0.85rem",
-                                color: isActive ? "#fff" : "#00A868",
-                                background: isActive ? "#00A868" : "transparent",
-                                border: "1px solid #00A868",
-                            })}
-                        >
-                            {({ isActive }) => (
-                                <>
-                                    <img className="topbar-logo"
-                                        src={logoAsaas}
-                                        alt=""
-                                        aria-hidden="true"
-                                        style={{
-                                            width: 24,
-                                            height: 24,
-                                            objectFit: "contain",
-                                            filter: isActive ? "brightness(0) invert(1)" : "none",
-                                            transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease-in-out",
-                                        }}
-                                    />
-                                    <span>Asaas</span>
-                                </>
-                            )}
-                        </NavLink>
-                    )}
-                    {access?.canManageAccess && (
-                        <NavLink
-                            to="/integracoes/keeta"
-                            id="keeta-link"
-                            className="keeta-link"
-                            onClick={closeNav}
-                            title="Integração Keeta — credenciais OAuth, autorização de lojas e pedidos"
-                            style={({ isActive }) => ({
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "8px",
-                                padding: "8px 14px",
-                                borderRadius: 8,
-                                textDecoration: "none",
-                                fontFamily: "var(--font-cond)",
-                                fontWeight: 600,
-                                letterSpacing: "0.05em",
-                                textTransform: "uppercase" as const,
-                                fontSize: "0.85rem",
-                                color: isActive ? "#fff" : "#6E3AF2",
-                                background: isActive ? "#6E3AF2" : "transparent",
-                                border: "1px solid #6E3AF2",
-                            })}
-                        >
-                            {({ isActive }) => (
-                                <>
-                                    <img className="topbar-logo"
-                                        src={logoKeeta}
-                                        alt=""
-                                        aria-hidden="true"
-                                        style={{
-                                            width: 24,
-                                            height: 24,
-                                            objectFit: "contain",
-                                            filter: isActive ? "brightness(0) invert(1)" : "none",
-                                            transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease-in-out",
-                                        }}
-                                    />
-                                    <span>Keeta</span>
-                                </>
-                            )}
-                        </NavLink>
-                    )}
-                    {access?.canManageAccess && (
-                        <NavLink
                             to="/configuracoes"
                             onClick={closeNav}
                             style={({ isActive }) => ({
@@ -251,17 +111,6 @@ export function AppShell() {
                     )}
                 </nav>
                 <span style={{ flex: 1 }} />
-
-                {canSee("Caixa") && (
-                    <button type="button" className="btn-ghost" onClick={() => setCashOpen(true)}>
-                        Caixa
-                    </button>
-                )}
-                {access?.canManageAccess && (
-                    <button type="button" className="btn-ghost" onClick={() => setShiftOpen(true)}>
-                        Turno
-                    </button>
-                )}
                 {access?.canManageAccess && <IFoodAlertsBell companyId={companyId} />}
                 <button
                     type="button"
@@ -301,9 +150,6 @@ export function AppShell() {
             <div id="main-content" tabIndex={-1} style={{ flex: 1 }}>
                 <Outlet />
             </div>
-
-            {cashOpen && <CashDrawer onClose={() => setCashOpen(false)} />}
-            {shiftOpen && <ShiftDrawer onClose={() => setShiftOpen(false)} />}
         </div>
     );
 }

@@ -26,6 +26,7 @@ const cards = [
     { to: "/clientes", label: "Clientes", desc: "Cadastro e fidelidade" },
     { to: "/reservas", label: "Reservas", desc: "Agenda de reservas de mesa" },
     { to: "/equipe", label: "Equipe", desc: "Funcionários e cargos" },
+    { to: "/logistica", label: "Motoboys e taxas", desc: "Cadastro de motoboys e taxas de entrega" },
     { to: "/usuarios", label: "Usuários", desc: "Contas de acesso ao sistema" },
     { to: "/acessos", label: "Acessos", desc: "Papéis e permissões dos usuários" },
     { to: "/faturamento", label: "Faturamento", desc: "Custos e metas do mês" },
@@ -35,9 +36,10 @@ const cards = [
     { to: "/cenarios", label: "Cenários", desc: "Projeções e simulações" },
     { to: "/promocoes", label: "Promoções", desc: "Ofertas e descontos ativos" },
     { to: "/impressao", label: "Impressão", desc: "Impressoras e cupons" },
+    { to: "/caixa", label: "Caixa", desc: "Caixa" },
     { to: "/integracoes/ifood", label: "Integração iFood", desc: "Credenciais e conexão com o iFood" },
     { to: "/integracoes/asaas", label: "Integração Asaas", desc: "Credenciais, clientes, cobranças e webhooks" },
-    { to: "/integracoes/keeta", label: "Integração Keeta", desc: "Credenciais e conexão com o Keeta" },
+    { to: "/integracoes/keeta", label: "Integração Keeta", desc: "Credenciais e conexão com o Keeta" }
 ];
 
 export function SettingsPage() {
