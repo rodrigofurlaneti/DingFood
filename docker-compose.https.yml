@@ -1,4 +1,4 @@
-﻿services:
+services:
   api:
     environment:
       Cors__AllowedOrigins__0: "https://dingfood-prod.brazilsouth.cloudapp.azure.com"
@@ -23,9 +23,9 @@
       CERTBOT_EMAIL: ${CERTBOT_EMAIL}
     entrypoint: >
       /bin/sh -c "
-      certbot certonly --webroot -w /var/www/certbot 
-      --non-interactive --agree-tos 
-      -d \$${CERTBOT_DOMAIN} 
+      certbot certonly --webroot -w /var/www/certbot
+      --non-interactive --agree-tos
+      -d \$${CERTBOT_DOMAIN}
       -m \$${CERTBOT_EMAIL}
       && while :; do sleep 12h & wait \$\$!; certbot renew --quiet; done
       "
