@@ -8,7 +8,7 @@ internal sealed class IfoodFinancialEventConfiguration : IEntityTypeConfiguratio
 {
     public void Configure(EntityTypeBuilder<IfoodFinancialEvent> builder)
     {
-        builder.ToTable("IfoodFinancialEvent");
+        builder.ToTable("ifoodfinancialevent");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

@@ -8,7 +8,7 @@ internal sealed class CustomerRefreshTokenConfiguration : IEntityTypeConfigurati
 {
     public void Configure(EntityTypeBuilder<CustomerRefreshToken> builder)
     {
-        builder.ToTable("CustomerRefreshToken");
+        builder.ToTable("customerrefreshtoken");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
         

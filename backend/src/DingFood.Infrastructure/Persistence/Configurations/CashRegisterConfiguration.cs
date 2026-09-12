@@ -8,7 +8,7 @@ internal sealed class CashRegisterConfiguration : IEntityTypeConfiguration<CashR
 {
     public void Configure(EntityTypeBuilder<CashRegister> builder)
     {
-        builder.ToTable("CashRegister");
+        builder.ToTable("cashregister");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
         

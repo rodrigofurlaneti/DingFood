@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using DingFood.Domain.Entities;
 
@@ -8,7 +8,7 @@ internal sealed class AppUserFeatureConfiguration : IEntityTypeConfiguration<App
 {
     public void Configure(EntityTypeBuilder<AppUserFeature> builder)
     {
-        builder.ToTable("AppUserFeature");
+        builder.ToTable("appuserfeature");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

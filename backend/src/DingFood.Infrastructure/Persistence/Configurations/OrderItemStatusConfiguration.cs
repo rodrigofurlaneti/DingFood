@@ -8,7 +8,7 @@ internal sealed class OrderItemStatusConfiguration : IEntityTypeConfiguration<Or
 {
     public void Configure(EntityTypeBuilder<OrderItemStatus> builder)
     {
-        builder.ToTable("OrderItemStatus");
+        builder.ToTable("orderitemstatus");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
         

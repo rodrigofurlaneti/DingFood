@@ -8,7 +8,7 @@ internal sealed class PaymentMethodConfiguration : IEntityTypeConfiguration<Paym
 {
     public void Configure(EntityTypeBuilder<PaymentMethod> builder)
     {
-        builder.ToTable("PaymentMethod");
+        builder.ToTable("paymentmethod");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
         

@@ -8,7 +8,7 @@ internal sealed class SalePaymentConfiguration : IEntityTypeConfiguration<SalePa
 {
     public void Configure(EntityTypeBuilder<SalePayment> builder)
     {
-        builder.ToTable("SalePayment");
+        builder.ToTable("salepayment");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
         

@@ -8,7 +8,7 @@ internal sealed class PurchaseConfiguration : IEntityTypeConfiguration<Purchase>
 {
     public void Configure(EntityTypeBuilder<Purchase> builder)
     {
-        builder.ToTable("Purchase");
+        builder.ToTable("purchase");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
         

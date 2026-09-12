@@ -8,7 +8,7 @@ internal sealed class IfoodProductMappingConfiguration : IEntityTypeConfiguratio
 {
     public void Configure(EntityTypeBuilder<IfoodProductMapping> builder)
     {
-        builder.ToTable("IfoodProductMapping");
+        builder.ToTable("ifoodproductmapping");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

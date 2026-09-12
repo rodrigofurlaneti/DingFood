@@ -8,7 +8,7 @@ internal sealed class SaleConfiguration : IEntityTypeConfiguration<Sale>
 {
     public void Configure(EntityTypeBuilder<Sale> builder)
     {
-        builder.ToTable("Sale");
+        builder.ToTable("sale");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
         

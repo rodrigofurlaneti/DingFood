@@ -8,7 +8,7 @@ internal sealed class PizzaFlavorPriceConfiguration : IEntityTypeConfiguration<P
 {
     public void Configure(EntityTypeBuilder<PizzaFlavorPrice> builder)
     {
-        builder.ToTable("PizzaFlavorPrice");
+        builder.ToTable("pizzaflavorprice");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

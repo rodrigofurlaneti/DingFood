@@ -8,7 +8,7 @@ internal sealed class IfoodLogisticsDeliveryConfiguration : IEntityTypeConfigura
 {
     public void Configure(EntityTypeBuilder<IfoodLogisticsDelivery> builder)
     {
-        builder.ToTable("IfoodLogisticsDelivery");
+        builder.ToTable("ifoodlogisticsdelivery");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

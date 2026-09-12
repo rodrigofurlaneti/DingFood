@@ -8,7 +8,7 @@ internal sealed class ComandaSettingConfiguration : IEntityTypeConfiguration<Com
 {
     public void Configure(EntityTypeBuilder<ComandaSetting> builder)
     {
-        builder.ToTable("ComandaSetting");
+        builder.ToTable("comandasetting");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

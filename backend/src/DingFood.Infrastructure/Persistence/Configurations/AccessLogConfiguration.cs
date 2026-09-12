@@ -8,7 +8,7 @@ internal sealed class AccessLogConfiguration : IEntityTypeConfiguration<AccessLo
 {
     public void Configure(EntityTypeBuilder<AccessLog> builder)
     {
-        builder.ToTable("AccessLog");
+        builder.ToTable("accesslog");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
         

@@ -8,7 +8,7 @@ internal sealed class DiningTableConfiguration : IEntityTypeConfiguration<Dining
 {
     public void Configure(EntityTypeBuilder<DiningTable> builder)
     {
-        builder.ToTable("DiningTable");
+        builder.ToTable("diningtable");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
         builder.Property(x => x.QrToken);

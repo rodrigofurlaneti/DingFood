@@ -8,7 +8,7 @@ internal sealed class ComplementGroupConfiguration : IEntityTypeConfiguration<Co
 {
     public void Configure(EntityTypeBuilder<ComplementGroup> builder)
     {
-        builder.ToTable("ComplementGroup");
+        builder.ToTable("complementgroup");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

@@ -8,7 +8,7 @@ internal sealed class StockMovementTypeConfiguration : IEntityTypeConfiguration<
 {
     public void Configure(EntityTypeBuilder<StockMovementType> builder)
     {
-        builder.ToTable("StockMovementType");
+        builder.ToTable("stockmovementtype");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
         

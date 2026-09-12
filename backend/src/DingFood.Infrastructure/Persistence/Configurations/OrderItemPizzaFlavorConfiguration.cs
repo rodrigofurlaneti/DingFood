@@ -8,7 +8,7 @@ internal sealed class OrderItemPizzaFlavorConfiguration : IEntityTypeConfigurati
 {
     public void Configure(EntityTypeBuilder<OrderItemPizzaFlavor> builder)
     {
-        builder.ToTable("OrderItemPizzaFlavor");
+        builder.ToTable("orderitempizzaflavor");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

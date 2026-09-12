@@ -8,7 +8,7 @@ internal sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderIte
 {
     public void Configure(EntityTypeBuilder<OrderItem> builder)
     {
-        builder.ToTable("OrderItem");
+        builder.ToTable("orderitem");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
         builder.HasMany(x => x.OptionalExtras).WithOne().HasForeignKey(x => x.OrderItemId).OnDelete(DeleteBehavior.Cascade);

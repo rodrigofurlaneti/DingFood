@@ -8,7 +8,7 @@ internal sealed class PromotionConfiguration : IEntityTypeConfiguration<Promotio
 {
     public void Configure(EntityTypeBuilder<Promotion> builder)
     {
-        builder.ToTable("Promotion");
+        builder.ToTable("promotion");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

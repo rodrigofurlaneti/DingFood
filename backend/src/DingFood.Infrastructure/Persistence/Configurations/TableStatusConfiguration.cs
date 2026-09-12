@@ -8,7 +8,7 @@ internal sealed class TableStatusConfiguration : IEntityTypeConfiguration<TableS
 {
     public void Configure(EntityTypeBuilder<TableStatus> builder)
     {
-        builder.ToTable("TableStatus");
+        builder.ToTable("tablestatus");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
         

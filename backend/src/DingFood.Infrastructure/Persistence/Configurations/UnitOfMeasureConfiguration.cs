@@ -8,7 +8,7 @@ internal sealed class UnitOfMeasureConfiguration : IEntityTypeConfiguration<Unit
 {
     public void Configure(EntityTypeBuilder<UnitOfMeasure> builder)
     {
-        builder.ToTable("UnitOfMeasure");
+        builder.ToTable("unitofmeasure");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
         

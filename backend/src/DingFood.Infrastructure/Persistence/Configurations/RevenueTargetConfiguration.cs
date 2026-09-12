@@ -8,7 +8,7 @@ internal sealed class RevenueTargetConfiguration : IEntityTypeConfiguration<Reve
 {
     public void Configure(EntityTypeBuilder<RevenueTarget> builder)
     {
-        builder.ToTable("RevenueTarget");
+        builder.ToTable("revenuetarget");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

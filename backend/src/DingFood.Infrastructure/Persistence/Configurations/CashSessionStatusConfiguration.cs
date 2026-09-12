@@ -8,7 +8,7 @@ internal sealed class CashSessionStatusConfiguration : IEntityTypeConfiguration<
 {
     public void Configure(EntityTypeBuilder<CashSessionStatus> builder)
     {
-        builder.ToTable("CashSessionStatus");
+        builder.ToTable("cashsessionstatus");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
         

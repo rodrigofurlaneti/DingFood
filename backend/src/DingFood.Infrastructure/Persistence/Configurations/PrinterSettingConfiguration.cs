@@ -8,7 +8,7 @@ internal sealed class PrinterSettingConfiguration : IEntityTypeConfiguration<Pri
 {
     public void Configure(EntityTypeBuilder<PrinterSetting> builder)
     {
-        builder.ToTable("PrinterSetting");
+        builder.ToTable("printersetting");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

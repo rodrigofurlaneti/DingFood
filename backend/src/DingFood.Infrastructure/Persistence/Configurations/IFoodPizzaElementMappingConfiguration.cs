@@ -8,7 +8,7 @@ internal sealed class IfoodPizzaElementMappingConfiguration : IEntityTypeConfigu
 {
     public void Configure(EntityTypeBuilder<IfoodPizzaElementMapping> builder)
     {
-        builder.ToTable("IfoodPizzaElementMapping");
+        builder.ToTable("ifoodpizzaelementmapping");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

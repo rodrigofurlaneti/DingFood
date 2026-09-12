@@ -8,7 +8,7 @@ internal sealed class IfoodComplementMappingConfiguration : IEntityTypeConfigura
 {
     public void Configure(EntityTypeBuilder<IfoodComplementMapping> builder)
     {
-        builder.ToTable("IfoodComplementMapping");
+        builder.ToTable("ifoodcomplementmapping");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

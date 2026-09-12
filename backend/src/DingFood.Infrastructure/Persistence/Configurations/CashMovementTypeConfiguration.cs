@@ -8,7 +8,7 @@ internal sealed class CashMovementTypeConfiguration : IEntityTypeConfiguration<C
 {
     public void Configure(EntityTypeBuilder<CashMovementType> builder)
     {
-        builder.ToTable("CashMovementType");
+        builder.ToTable("cashmovementtype");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
         

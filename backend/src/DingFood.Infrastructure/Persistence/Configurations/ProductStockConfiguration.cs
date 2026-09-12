@@ -8,7 +8,7 @@ namespace DingFood.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<ProductStock> builder)
         {
-            builder.ToTable("ProductStock");
+            builder.ToTable("productstock");
 
             builder.HasKey(x => x.ProductId);
 

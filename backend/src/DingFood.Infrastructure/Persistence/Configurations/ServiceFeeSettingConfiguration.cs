@@ -8,7 +8,7 @@ internal sealed class ServiceFeeSettingConfiguration : IEntityTypeConfiguration<
 {
     public void Configure(EntityTypeBuilder<ServiceFeeSetting> builder)
     {
-        builder.ToTable("ServiceFeeSetting");
+        builder.ToTable("servicefeesetting");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

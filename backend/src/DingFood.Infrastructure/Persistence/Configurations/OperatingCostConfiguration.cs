@@ -8,7 +8,7 @@ internal sealed class OperatingCostConfiguration : IEntityTypeConfiguration<Oper
 {
     public void Configure(EntityTypeBuilder<OperatingCost> builder)
     {
-        builder.ToTable("OperatingCost");
+        builder.ToTable("operatingcost");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

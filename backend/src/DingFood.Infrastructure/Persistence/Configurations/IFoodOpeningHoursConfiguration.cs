@@ -8,7 +8,7 @@ internal sealed class IfoodOpeningHoursConfiguration : IEntityTypeConfiguration<
 {
     public void Configure(EntityTypeBuilder<IfoodOpeningHours> builder)
     {
-        builder.ToTable("IfoodOpeningHours");
+        builder.ToTable("ifoodopeninghours");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

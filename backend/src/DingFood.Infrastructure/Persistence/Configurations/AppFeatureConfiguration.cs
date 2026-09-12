@@ -8,7 +8,7 @@ internal sealed class AppFeatureConfiguration : IEntityTypeConfiguration<AppFeat
 {
     public void Configure(EntityTypeBuilder<AppFeature> builder)
     {
-        builder.ToTable("AppFeature");
+        builder.ToTable("appfeature");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

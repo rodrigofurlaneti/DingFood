@@ -8,7 +8,7 @@ internal sealed class OrderPartialPaymentConfiguration : IEntityTypeConfiguratio
 {
     public void Configure(EntityTypeBuilder<OrderPartialPayment> builder)
     {
-        builder.ToTable("OrderPartialPayment");
+        builder.ToTable("orderpartialpayment");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

@@ -8,7 +8,7 @@ internal sealed class TableReservationConfiguration : IEntityTypeConfiguration<T
 {
     public void Configure(EntityTypeBuilder<TableReservation> builder)
     {
-        builder.ToTable("TableReservation");
+        builder.ToTable("tablereservation");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

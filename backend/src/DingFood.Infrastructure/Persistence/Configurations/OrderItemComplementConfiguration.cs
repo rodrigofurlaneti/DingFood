@@ -8,7 +8,7 @@ internal sealed class OrderItemComplementConfiguration : IEntityTypeConfiguratio
 {
     public void Configure(EntityTypeBuilder<OrderItemComplement> builder)
     {
-        builder.ToTable("OrderItemComplement");
+        builder.ToTable("orderitemcomplement");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

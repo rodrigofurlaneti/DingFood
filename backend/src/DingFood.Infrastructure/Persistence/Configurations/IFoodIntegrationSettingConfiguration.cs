@@ -8,7 +8,7 @@ internal sealed class IfoodIntegrationSettingConfiguration : IEntityTypeConfigur
 {
     public void Configure(EntityTypeBuilder<IfoodIntegrationSetting> builder)
     {
-        builder.ToTable("IfoodIntegrationSetting");
+        builder.ToTable("ifoodintegrationsetting");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
 

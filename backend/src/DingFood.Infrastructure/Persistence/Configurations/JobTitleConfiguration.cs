@@ -8,7 +8,7 @@ internal sealed class JobTitleConfiguration : IEntityTypeConfiguration<JobTitle>
 {
     public void Configure(EntityTypeBuilder<JobTitle> builder)
     {
-        builder.ToTable("JobTitle");
+        builder.ToTable("jobtitle");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
         
