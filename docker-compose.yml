@@ -13,7 +13,7 @@
       Jwt__Issuer: "SyncBar"
       Jwt__Audience: "SyncBar.Client"
       Cors__AllowedOrigins__0: "http://localhost"
-      Cors__AllowedOrigins__1: "http://9.205.156.87:80"
+      Cors__AllowedOrigins__1: "http://20.226.121.58:80"
     ports:
       - "81:8080"
     volumes:
