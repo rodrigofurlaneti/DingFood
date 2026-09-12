@@ -3,6 +3,8 @@
     image: ghcr.io/rodrigofurlaneti/dingfood-api:latest
     pull_policy: always 
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       Delivery__GoogleMapsApiKey: "${Delivery__GoogleMapsApiKey}"  
       ASPNETCORE_ENVIRONMENT: "Production"
@@ -16,11 +18,6 @@
       - "81:8080"
     volumes:
       - syncbar-uploads:/app/wwwroot/uploads
-      # Chave do DataProtection (criptografa/descriptografa segredos no banco, ex.: ClientSecret
-      # do Ifood). Sem volume, essa pasta vivia só na camada gravável do container e era perdida
-      # a cada "docker compose up --force-recreate" — todo deploy gerava uma chave nova e
-      # qualquer segredo criptografado com a chave anterior ficava ilegível ("erro de
-      # criptografia (Data Protection)" ao tentar pegar o token do Ifood).
       - syncbar-dataprotection-keys:/app/app_data/protecting-keys
       - syncbar-whatsapp-outbox:/app/data/whatsapp-outbox
 
