@@ -14,7 +14,7 @@ namespace DingFood.Tests.Infrastructure.Persistence.Configurations
         [Fact]
         public void Configure_ShouldMapToDiningTableTableWithIdAsPrimaryKey()
         {
-            EntityType.GetTableName().Should().Be("DiningTable");
+            EntityType.GetTableName().Should().Be("diningtable");
             var primaryKey = EntityType.FindPrimaryKey();
             primaryKey.Should().NotBeNull();
             primaryKey!.Properties.Should().ContainSingle(p => p.Name == nameof(DiningTable.Id));

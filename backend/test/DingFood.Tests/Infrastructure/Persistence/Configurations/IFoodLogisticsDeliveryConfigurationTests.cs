@@ -14,7 +14,7 @@ namespace DingFood.Tests.Infrastructure.Persistence.Configurations
         [Fact]
         public void Configure_ShouldMapToIfoodLogisticsDeliveryTableWithIdAsPrimaryKey()
         {
-            EntityType.GetTableName().Should().Be("IfoodLogisticsDelivery");
+            EntityType.GetTableName().Should().Be("ifoodlogisticsdelivery");
             var primaryKey = EntityType.FindPrimaryKey();
             primaryKey.Should().NotBeNull();
             primaryKey!.Properties.Should().ContainSingle(p => p.Name == nameof(IfoodLogisticsDelivery.Id));

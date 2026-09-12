@@ -14,7 +14,7 @@ namespace DingFood.Tests.Infrastructure.Persistence.Configurations
         [Fact]
         public void Configure_ShouldMapToIfoodComplementMappingTableWithIdAsPrimaryKey()
         {
-            EntityType.GetTableName().Should().Be("IfoodComplementMapping");
+            EntityType.GetTableName().Should().Be("ifoodcomplementmapping");
             var primaryKey = EntityType.FindPrimaryKey();
             primaryKey.Should().NotBeNull();
             primaryKey!.Properties.Should().ContainSingle(p => p.Name == nameof(IfoodComplementMapping.Id));

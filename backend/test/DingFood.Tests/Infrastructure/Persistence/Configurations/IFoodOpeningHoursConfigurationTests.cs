@@ -14,7 +14,7 @@ namespace DingFood.Tests.Infrastructure.Persistence.Configurations
         [Fact]
         public void Configure_ShouldMapToIfoodOpeningHoursTableWithIdAsPrimaryKey()
         {
-            EntityType.GetTableName().Should().Be("IfoodOpeningHours");
+            EntityType.GetTableName().Should().Be("ifoodopeninghours");
             var primaryKey = EntityType.FindPrimaryKey();
             primaryKey.Should().NotBeNull();
             primaryKey!.Properties.Should().ContainSingle(p => p.Name == nameof(IfoodOpeningHours.Id));
