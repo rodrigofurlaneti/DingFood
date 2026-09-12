@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 set -euo pipefail
 cd /opt/syncbarservice
 exec 9>/var/lock/syncbar-https.lock
@@ -23,7 +23,7 @@ fi
 "${compose[@]}" config --quiet
 docker run --rm -p 80:80 -v "$PWD/letsencrypt:/etc/letsencrypt" "$certbot_image" \
   certonly --standalone --non-interactive --agree-tos --register-unsafely-without-email \
-  --preferred-profile shortlived --ip-address 9.205.156.87 --cert-name syncbar-ip --keep-until-expiring
+  --preferred-profile shortlived --ip-address 20.226.121.58 --cert-name syncbar-ip --keep-until-expiring
 "${compose[@]}" pull
 "${compose[@]}" run --rm --no-deps frontend nginx -t
 "${compose[@]}" run --rm --no-deps edge haproxy -c -f /usr/local/etc/haproxy/haproxy.cfg
@@ -35,4 +35,4 @@ cat > /etc/cron.d/syncbar-https <<'CRON'
 CRON
 chmod 644 /etc/cron.d/syncbar-https
 curl --fail --silent --show-error --retry 30 --retry-all-errors --retry-delay 3 \
-  --connect-timeout 5 --max-time 10 https://9.205.156.87:84/health
+  --connect-timeout 5 --max-time 10 https://20.226.121.58:84/health
