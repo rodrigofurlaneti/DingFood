@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 cd /opt/syncbarservice
 exec 9>/var/lock/syncbar-https.lock
