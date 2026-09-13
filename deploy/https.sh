@@ -35,4 +35,4 @@ cat > /etc/cron.d/syncbar-https <<'CRON'
 CRON
 chmod 644 /etc/cron.d/syncbar-https
 curl --fail --silent --show-error --retry 30 --retry-all-errors --retry-delay 3 \
-  --connect-timeout 5 --max-time 10 https://20.226.121.58:84/health
+  --connect-timeout 5 --max-time 10 https://20.226.121.58/health
