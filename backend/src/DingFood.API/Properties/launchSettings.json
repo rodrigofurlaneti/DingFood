@@ -6,7 +6,6 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ConnectionStrings__DefaultConnection": "Server=191.234.174.58;Port=3306;Database=dingfooddb;Uid=admin;Pwd=SenhaForte@2026!;SslMode=Required;ConnectionTimeout=60;AllowZeroDateTime=True;ConvertZeroDateTime=True;",
-        "ConnectionStrings__Redis": "localhost:6379"
       },
       "applicationUrl": "https://localhost:7250;http://localhost:5250"
     }
