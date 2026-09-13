@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test';
+﻿import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './test-live',
@@ -8,7 +8,7 @@ export default defineConfig({
   timeout: 90000,
   reporter: 'list',
   use: {
-    baseURL: process.env.STOREFRONT_BASE_URL ?? 'http://9.205.156.87:84',
+    baseURL: process.env.STOREFRONT_BASE_URL ?? 'http://191.234.174.58:80',
     ignoreHTTPSErrors: false,
     trace: 'off', // Registration requests contain the generated password.
     screenshot: 'only-on-failure',
