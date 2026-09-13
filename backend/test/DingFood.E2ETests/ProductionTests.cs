@@ -26,7 +26,7 @@ internal static class Settings
     {
         get
         {
-            var uri = new Uri(Environment.GetEnvironmentVariable("E2E_BASE_URL") ?? "http://20.226.121.58:80");
+            var uri = new Uri(Environment.GetEnvironmentVariable("E2E_BASE_URL") ?? "http://191.234.174.58:80");
             if (uri.Scheme is not ("http" or "https") || !string.IsNullOrEmpty(uri.UserInfo))
                 throw new InvalidOperationException("E2E_BASE_URL deve ser HTTP(S), sem credenciais na URL.");
             return uri;
