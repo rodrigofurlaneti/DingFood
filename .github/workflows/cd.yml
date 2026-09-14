@@ -1,0 +1,267 @@
+name: CD
+
+# Executa APENAS em pushes para main (depois que CI.yml passou)
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+
+jobs:
+
+  # ============================================================
+  # BUILD: Compila backend e frontend (mesmo que CI, mas aqui)
+  # ============================================================
+
+  build-backend:
+    name: Build Backend (.NET 9)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Cache NuGet
+        uses: actions/cache@v5
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('backend/**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore DingFood.sln
+
+      - name: Build (Release)
+        run: dotnet build DingFood.sln --no-restore --configuration Release
+
+      - name: Publish
+        run: dotnet publish src/DingFood.API/DingFood.API.csproj --no-build --configuration Release --output ./publish
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: backend-publish
+          path: backend/publish/
+          retention-days: 5
+
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: frontend-build
+          path: frontend/dist/
+          retention-days: 5
+
+
+  # ============================================================
+  # DEPLOY: Publica em /opt/dingfood-api e /var/www/dingfood-frontend
+  # ============================================================
+
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs:
+      - build-backend
+      - build-frontend
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Download backend artifacts
+        uses: actions/download-artifact@v6
+        with:
+          name: backend-publish
+          path: ./backend-publish
+
+      - name: Download frontend artifacts
+        uses: actions/download-artifact@v6
+        with:
+          name: frontend-build
+          path: ./frontend-build
+
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+
+      - name: Deploy Backend to /opt/dingfood-api
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOFSH'
+          set -e
+
+          echo "📦 Backend — iniciando deploy..."
+          timestamp=$(date +%Y%m%d_%H%M%S)
+
+          # Backup da versão anterior
+          if [ -d "/opt/dingfood-api" ]; then
+            sudo mv /opt/dingfood-api "/opt/dingfood-api.backup_${timestamp}"
+            echo "✅ Backup: dingfood-api.backup_${timestamp}"
+          fi
+
+          # Criar diretório
+          sudo mkdir -p /opt/dingfood-api
+          EOFSH
+
+          # Criar tar do backend
+          tar -czf backend-release.tar.gz -C ./backend-publish .
+
+          # Transferir
+          scp -i ~/.ssh/id_rsa backend-release.tar.gz \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
+
+          # Extrair no servidor
+          ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOFSH'
+          cd /tmp
+          sudo tar -xzf backend-release.tar.gz -C /opt/dingfood-api/
+          sudo rm backend-release.tar.gz
+
+          # Permissões
+          sudo chown -R www-data:www-data /opt/dingfood-api
+          sudo chmod +x /opt/dingfood-api/DingFood.API 2>/dev/null || true
+
+          echo "✅ Backend extraído em /opt/dingfood-api"
+          EOFSH
+
+      - name: Deploy Frontend to /var/www/dingfood-frontend
+        run: |
+          # Criar tar do frontend
+          tar -czf frontend-release.tar.gz -C ./frontend-build .
+
+          # Transferir
+          scp -i ~/.ssh/id_rsa frontend-release.tar.gz \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
+
+          # Fazer backup e extrair
+          ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOFSH'
+          set -e
+
+          echo "📦 Frontend — iniciando deploy..."
+          timestamp=$(date +%Y%m%d_%H%M%S)
+
+          # Backup frontend
+          if [ -d "/var/www/dingfood-frontend" ]; then
+            sudo mv /var/www/dingfood-frontend "/var/www/dingfood-frontend.backup_${timestamp}"
+            echo "✅ Backup: dingfood-frontend.backup_${timestamp}"
+          fi
+
+          # Extrair novo frontend
+          sudo mkdir -p /var/www/dingfood-frontend
+          cd /tmp
+          sudo tar -xzf frontend-release.tar.gz -C /var/www/dingfood-frontend/
+          sudo rm frontend-release.tar.gz
+
+          # Permissões
+          sudo chown -R www-data:www-data /var/www/dingfood-frontend
+          sudo chmod -R 755 /var/www/dingfood-frontend
+
+          echo "✅ Frontend extraído em /var/www/dingfood-frontend"
+          EOFSH
+
+      - name: Reload Nginx
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOFSH'
+
+          echo "🔄 Recarregando Nginx..."
+
+          # Testar configuração
+          sudo nginx -t
+
+          # Recarregar
+          sudo systemctl reload nginx
+
+          echo "✅ Nginx recarregado"
+          EOFSH
+
+      - name: Health check
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOFSH'
+
+          echo "🏥 Verificando saúde..."
+          sleep 3
+
+          # Frontend
+          if curl -s http://localhost:80 | grep -q "<!DOCTYPE\|<html" 2>/dev/null; then
+            echo "✅ Frontend OK (porta 80)"
+          else
+            echo "⚠️  Frontend — verificação pendente"
+          fi
+
+          # Backend
+          if curl -s http://localhost:81 > /dev/null 2>&1; then
+            echo "✅ Backend respondendo (porta 81)"
+          else
+            echo "⚠️  Backend — verificação pendente"
+          fi
+
+          EOFSH
+
+      - name: Deployment summary
+        run: |
+          echo "=========================================="
+          echo "✅ DEPLOY CONCLUÍDO COM SUCESSO!"
+          echo "=========================================="
+          echo ""
+          echo "📍 Frontend:  http://191.234.174.58:80"
+          echo "📍 Backend:   http://191.234.174.58:81"
+          echo ""
+          echo "📂 Backend:  /opt/dingfood-api"
+          echo "📂 Frontend: /var/www/dingfood-frontend"
+          echo ""
+          echo "📦 Versão: ${{ github.sha }}"
+          echo "⏰ Deploy: $(date)"
+          echo ""
+          echo "💾 Backups:"
+          echo "   - /opt/dingfood-api.backup_*"
+          echo "   - /var/www/dingfood-frontend.backup_*"
+          echo ""
+          echo "=========================================="
