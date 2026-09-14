@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DingFood.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260912161510_InitialCreate")]
+    [Migration("20260914144158_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

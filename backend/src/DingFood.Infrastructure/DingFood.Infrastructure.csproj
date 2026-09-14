@@ -35,4 +35,8 @@
 		<EmbeddedResource Include="Persistence/Migrations/IfoodWebhook.sql" LogicalName="DingFood.IfoodWebhook.sql" />
 		<EmbeddedResource Include="Persistence/Migrations/BusinessGroups.sql" LogicalName="DingFood.BusinessGroups.sql" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Migrations\" />
+	</ItemGroup>
 </Project>

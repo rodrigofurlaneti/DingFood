@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +14,7 @@ namespace DingFood.API.Controllers;
 public abstract class ApiController(IMediator mediator) : ControllerBase
 {
     protected readonly IMediator Mediator = mediator;
-    public const string ManagerRoles = "Administrador,Gerente";
+    public const string ManagerRoles = "Administrador";
     protected IActionResult HandleFailure(Result result)
         => result.Error.Code switch
         {

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -18,12 +18,6 @@ using System.Threading.RateLimiting;
 var builder = WebApplication.CreateBuilder(args);
 ConfigureLogging(builder);
 ValidateDatabaseConnectionString(builder.Configuration);
-// DataProtection é configurado em AddInfrastructure (caminho multiplataforma, baseado em
-// AppContext.BaseDirectory) — não duplicar aqui. Havia uma segunda chamada a
-// AddDataProtection().PersistKeysToFileSystem() com um caminho absoluto do Windows
-// (C:\DingFood\ChavesCriptograficas), código morto/perigoso: só "funcionava" em produção
-// (Linux/container) porque o registro de AddInfrastructure roda depois e vence a mesma
-// opção — mas quebraria silenciosamente se a ordem dessas duas chamadas mudasse.
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -49,15 +43,6 @@ builder.Services.AddHealthChecks()
         tags: ["ready"]);
 
 var app = builder.Build();
-
-// ==========================================================================
-// APLICA AS MIGRATIONS AUTOMATICAMENTE NO BANCO DE DADOS NA INICIALIZAÇÃO
-// ==========================================================================
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<DingFood.Infrastructure.Persistence.AppDbContext>();
-    await dbContext.Database.MigrateAsync();
-}
 
 ValidateJwtSecret(builder.Configuration);
 

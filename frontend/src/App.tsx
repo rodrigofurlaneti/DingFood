@@ -104,26 +104,26 @@ export default function App() {
             >
                 <Route path="/" element={<FeatureGate code="Salao"><OrdersPage /></FeatureGate>} />
                 <Route path="/delivery" element={<FeatureGate code="Salao"><DeliveryBoardPage /></FeatureGate>} />
-                <Route path="/logistica" element={<ManagerGate><OwnDeliveryPage /></ManagerGate>} />
-                <Route path="/produtos" element={<FeatureGate code="Cardapio"><ProductsPage /></FeatureGate>} />
-                <Route path="/complementos" element={<FeatureGate code="Cardapio"><ComplementsPage /></FeatureGate>} />
-                <Route path="/estoque" element={<FeatureGate code="Estoque"><StockPage /></FeatureGate>} />
+                <Route path="/logistica" element={<FeatureGate code="Salao"><ManagerGate><OwnDeliveryPage /></ManagerGate></FeatureGate>} />
+                <Route path="/produtos" element={<FeatureGate code="Salao"><ProductsPage /></FeatureGate>} />
+                <Route path="/complementos" element={<FeatureGate code="Salao"><ComplementsPage /></FeatureGate>} />
+                <Route path="/estoque" element={<FeatureGate code="Salao"><StockPage /></FeatureGate>} />
                 <Route path="/equipe" element={<ManagerGate><EmployeesPage /></ManagerGate>} />
                 <Route path="/usuarios" element={<ManagerGate><UsersPage /></ManagerGate>} />
                 <Route path="/empresas" element={<ManagerGate><CompaniesPage /></ManagerGate>} />
                 <Route path="/faturamento" element={<ManagerGate><FinancePage /></ManagerGate>} />
                 <Route path="/cenarios" element={<ManagerGate><ScenariosPage /></ManagerGate>} />
                 <Route path="/relatorios" element={<ManagerGate><ReportsPage /></ManagerGate>} />
-                <Route path="/preparo" element={<FeatureGate code="Preparo"><PreparationPage /></FeatureGate>} />
+                <Route path="/preparo" element={<FeatureGate code="Salao"><PreparationPage /></FeatureGate>} />
                 <Route path="/fechamentos" element={<ManagerGate><CashHistoryPage /></ManagerGate>} />
                 <Route path="/turnos" element={<ManagerGate><ShiftHistoryPage /></ManagerGate>} />
                 <Route path="/promocoes" element={<ManagerGate><PromotionsPage /></ManagerGate>} />
                 <Route path="/impressao" element={<ManagerGate><PrintingPage /></ManagerGate>} />
-                <Route path="/compras" element={<FeatureGate code="Estoque"><PurchasingPage /></FeatureGate>} />
+                <Route path="/compras" element={<FeatureGate code="Salao"><PurchasingPage /></FeatureGate>} />
                 <Route path="/reservas" element={<FeatureGate code="Salao"><ReservationsPage /></FeatureGate>} />
                 <Route path="/clientes" element={<FeatureGate code="Salao"><CustomersPage /></FeatureGate>} />
                 <Route path="/acessos" element={<ManagerGate><AccessPage /></ManagerGate>} />
-                <Route path="/configuracoes" element={<ManagerGate><SettingsPage /></ManagerGate>} />
+                <Route path="/configuracoes" element={<FeatureGate code="Salao"><SettingsPage /></FeatureGate>} />
 
                 {/* Integrações iFood */}
                 <Route path="/integracoes/ifood" element={<ManagerGate><IFoodIntegrationPage /></ManagerGate>} />
