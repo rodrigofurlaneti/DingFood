@@ -14,7 +14,7 @@ namespace DingFood.Tests.Domain.Entities
             string name = "Garçom";
 
             // Act
-            var result = JobTitle.Create(companyId, name);
+            var result = JobTitle.Create(companyId, null, name);
 
             // Assert
             result.IsSuccess.Should().BeTrue();
@@ -34,7 +34,7 @@ namespace DingFood.Tests.Domain.Entities
         public void Create_WithEmptyOrWhitespaceName_ShouldReturnFailureResult(string? invalidName)
         {
             // Act
-            var result = JobTitle.Create(1, invalidName!);
+            var result = JobTitle.Create(1, null, invalidName!);
 
             // Assert
             result.IsSuccess.Should().BeFalse();
@@ -46,7 +46,7 @@ namespace DingFood.Tests.Domain.Entities
         public void Touch_ShouldUpdateUpdatedAtTimestamp()
         {
             // Arrange
-            var jobTitle = JobTitle.Create(1, "Garçom").Value;
+            var jobTitle = JobTitle.Create(1, null, "Garçom").Value;
 
             // Act
             jobTitle.Touch();
@@ -60,7 +60,7 @@ namespace DingFood.Tests.Domain.Entities
         public void Deactivate_ShouldUpdateIsActiveToFalseAndSetUpdatedAt()
         {
             // Arrange
-            var jobTitle = JobTitle.Create(1, "Garçom").Value;
+            var jobTitle = JobTitle.Create(1, null, "Garçom").Value;
 
             // Act
             jobTitle.Deactivate();

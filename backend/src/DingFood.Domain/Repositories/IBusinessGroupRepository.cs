@@ -4,6 +4,7 @@ namespace DingFood.Domain.Repositories;
 
 public interface IBusinessGroupRepository
 {
+    Task AddAsync(BusinessGroup entity, CancellationToken cancellationToken = default);
     Task<BusinessGroup?> GetByIdAsync(long id, CancellationToken ct);
     Task<IReadOnlyCollection<AppUser>> GetUsersAsync(long groupId, CancellationToken ct);
     Task<(AppUser User, Company Home)?> GetUserHomeAsync(long userId, CancellationToken ct);

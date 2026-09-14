@@ -12,6 +12,7 @@ public sealed class RegisterCompanyCommandHandlerTests
 {
     private readonly ICompanyRepository _companyRepository = Substitute.For<ICompanyRepository>();
     private readonly IBranchRepository _branchRepository = Substitute.For<IBranchRepository>();
+    private readonly IBrandRepository _brandRepository = Substitute.For<IBrandRepository>();
     private readonly IRoleRepository _roleRepository = Substitute.For<IRoleRepository>();
     private readonly IAppUserRepository _userRepository = Substitute.For<IAppUserRepository>();
     private readonly IUserRoleRepository _userRoleRepository = Substitute.For<IUserRoleRepository>();
@@ -22,6 +23,7 @@ public sealed class RegisterCompanyCommandHandlerTests
     private readonly IEmployeeRepository _employeeRepository = Substitute.For<IEmployeeRepository>();
     private readonly IPasswordHasher _passwordHasher = Substitute.For<IPasswordHasher>();
     private readonly ILogTrackerRepository _logRepository = Substitute.For<ILogTrackerRepository>();
+    private readonly IBusinessGroupRepository _businessGroupRepository = Substitute.For<IBusinessGroupRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
 
     private readonly RegisterCompanyCommandHandler _handler;
@@ -31,6 +33,7 @@ public sealed class RegisterCompanyCommandHandlerTests
         _handler = new RegisterCompanyCommandHandler(
             _companyRepository,
             _branchRepository,
+            _brandRepository,
             _roleRepository,
             _userRepository,
             _userRoleRepository,
@@ -41,6 +44,7 @@ public sealed class RegisterCompanyCommandHandlerTests
             _employeeRepository,
             _passwordHasher,
             _logRepository,
+            _businessGroupRepository,
             _unitOfWork);
 
         // Por padrão nenhuma unicidade conflita e o hash é determinístico — cada teste

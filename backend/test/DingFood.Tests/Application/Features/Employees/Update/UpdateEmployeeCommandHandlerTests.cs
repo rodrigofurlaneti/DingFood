@@ -27,7 +27,7 @@ public sealed class UpdateEmployeeCommandHandlerTests
             email: "antigo@teste.com", phone: "11988880000", hiredAt: DateTime.Now, dismissedAt: null, salary: 1200m).Value;
 
     private static JobTitle CreateActiveJobTitle(long companyId = 1, string name = "Garçom")
-        => JobTitle.Create(companyId, name).Value;
+        => JobTitle.Create(companyId,null, name).Value;
 
     private static UpdateEmployeeCommand CreateValidCommand(string name = "Funcionario Atualizado")
         => new(EmployeeId: 1, JobTitleId: 2, Name: name, Email: "novo@teste.com", Phone: "11999990000", Salary: 1800m);

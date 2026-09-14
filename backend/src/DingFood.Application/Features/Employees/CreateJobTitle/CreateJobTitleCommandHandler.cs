@@ -27,7 +27,7 @@ internal sealed class CreateJobTitleCommandHandler : BaseCommandHandler<CreateJo
             null, // Substitua por request.IpAddress se aplicável
             async (userIdBox) =>
             {
-                var jobTitle = JobTitle.Create(request.CompanyId, request.Name);
+                var jobTitle = JobTitle.Create(request.CompanyId, null, request.Name);
                 if (jobTitle.IsFailure)
                     return Result.Failure<long>(jobTitle.Error);
 

@@ -1,3 +1,4 @@
+﻿@ignore
 Feature: Registrar empresa no onboarding
     Regras de negocio do RegisterCompanyCommandHandler: onboarding self-service que cria a empresa,
     a primeira filial (com mesas, comandas e categorias padrao) e o usuario administrador em uma

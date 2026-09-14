@@ -15,6 +15,7 @@ public sealed class RegisterCompanyCommandSteps
 {
     private readonly Mock<ICompanyRepository> _companyRepository = new();
     private readonly Mock<IBranchRepository> _branchRepository = new();
+    private readonly Mock<IBrandRepository> _brandRepository = new();
     private readonly Mock<IRoleRepository> _roleRepository = new();
     private readonly Mock<IAppUserRepository> _userRepository = new();
     private readonly Mock<IUserRoleRepository> _userRoleRepository = new();
@@ -25,6 +26,7 @@ public sealed class RegisterCompanyCommandSteps
     private readonly Mock<IEmployeeRepository> _employeeRepository = new();
     private readonly Mock<IPasswordHasher> _passwordHasher = new();
     private readonly Mock<ILogTrackerRepository> _logRepository = new();
+    private readonly Mock<IBusinessGroupRepository> _businessGroupRepository = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
     private Result<RegisterCompanyResponse>? _result;
@@ -57,10 +59,22 @@ public sealed class RegisterCompanyCommandSteps
     public async Task WhenEuRegistroANovaEmpresaNoOnboarding()
     {
         var handler = new RegisterCompanyCommandHandler(
-            _companyRepository.Object, _branchRepository.Object, _roleRepository.Object, _userRepository.Object,
-            _userRoleRepository.Object, _diningTableRepository.Object, _comandaRepository.Object,
-            _categoryRepository.Object, _jobTitleRepository.Object, _employeeRepository.Object,
-            _passwordHasher.Object, _logRepository.Object, _unitOfWork.Object);
+            _companyRepository.Object,
+            _branchRepository.Object,
+            _brandRepository.Object,
+            _roleRepository.Object,
+            _userRepository.Object,
+            _userRoleRepository.Object,
+            _diningTableRepository.Object,
+            _comandaRepository.Object,
+            _categoryRepository.Object,
+            _jobTitleRepository.Object,
+            _employeeRepository.Object,
+            _passwordHasher.Object,
+            _logRepository.Object,
+            _businessGroupRepository.Object, 
+            _unitOfWork.Object
+        );
 
         var command = new RegisterCompanyCommand(
             "Bar do Ze Ltda", "Bar do Ze", "12345678000100", "contato@bardoze.com.br", "11999990000",

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.DataProtection;
+﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,6 +62,7 @@ public static class DependencyInjection
         services.AddScoped<ICashSessionRepository, CashSessionRepository>();
         services.AddScoped<ICashMovementRepository, CashMovementRepository>();
         services.AddScoped<ICashSessionPaymentReconciliationRepository, CashSessionPaymentReconciliationRepository>();
+        services.AddScoped<IBrandRepository, BrandRepository>();
         services.AddScoped<IBranchPaymentMethodSettingRepository, BranchPaymentMethodSettingRepository>();
         services.AddScoped<ICashRegisterRepository, CashRegisterRepository>();
         services.AddScoped<IShiftClosingRepository, ShiftClosingRepository>();

@@ -1,4 +1,4 @@
-using DingFood.Domain.Entities;
+﻿using DingFood.Domain.Entities;
 using DingFood.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -79,5 +79,10 @@ internal sealed class BusinessGroupRepository(AppDbContext db, DbContextOptions<
         grant?.Revoke();
         foreach (var role in await db.UserRoles.Where(x => x.AppUserId == userId && x.CompanyId == companyId).ToListAsync(ct)) role.Deactivate();
         await db.SaveChangesAsync(ct);
+    }
+
+    public async Task AddAsync(BusinessGroup entity, CancellationToken cancellationToken = default)
+    {
+        await db.BusinessGroups.AddAsync(entity, cancellationToken);
     }
 }

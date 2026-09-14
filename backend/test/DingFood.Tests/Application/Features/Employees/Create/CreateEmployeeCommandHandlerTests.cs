@@ -22,7 +22,7 @@ public sealed class CreateEmployeeCommandHandlerTests
     }
 
     private static JobTitle CreateActiveJobTitle(long companyId = 1, string name = "Garçom")
-        => JobTitle.Create(companyId, name).Value;
+        => JobTitle.Create(companyId, null, name).Value;
 
     private static CreateEmployeeCommand CreateValidCommand(string name = "Funcionario Teste", string cpf = "12345678900")
         => new(BranchId: 1, JobTitleId: 1, Name: name, Cpf: cpf, Email: "func@teste.com", Phone: "11999990000", HiredAt: DateTime.Now, Salary: 1500m);

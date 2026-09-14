@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using DingFood.Application.Abstractions.Tenancy;
 using DingFood.Domain.Entities;
 using DingFood.Domain.Exceptions;
@@ -26,6 +26,7 @@ public sealed partial class AppDbContext(DbContextOptions<AppDbContext> options,
     public DbSet<AsaasIntegrationWebhookLog> AsaasIntegrationWebhookLogs => Set<AsaasIntegrationWebhookLog>();
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<Branch> Branchs => Set<Branch>();
+    public DbSet<Brand> Brands => Set<Brand>();
     public DbSet<UnitOfMeasure> UnitOfMeasures => Set<UnitOfMeasure>();
     public DbSet<TableStatus> TableStatuses => Set<TableStatus>();
     public DbSet<ComandaStatus> ComandaStatuses => Set<ComandaStatus>();
@@ -245,11 +246,6 @@ public sealed partial class AppDbContext(DbContextOptions<AppDbContext> options,
         }
         catch (DbUpdateException ex)
         {
-            // Cobre violação de índice único (ex.: UQ_Sale_CustomerOrderId) quando duas requisições
-            // para o mesmo recurso vencem a checagem "existe?" da aplicação quase ao mesmo tempo e
-            // uma delas perde na gravação — traduzido pro mesmo tipo de exceção de domínio usado
-            // para conflito de concorrência, pra quem chama poder tratar (ex.: reconsultar o
-            // registro vencedor) sem precisar depender de um tipo do EF Core na camada de Application.
             throw new ConcurrencyException("Ocorreu um conflito ao persistir as alterações — outro registro concorrente pode ter vencido a gravação.", ex);
         }
     }

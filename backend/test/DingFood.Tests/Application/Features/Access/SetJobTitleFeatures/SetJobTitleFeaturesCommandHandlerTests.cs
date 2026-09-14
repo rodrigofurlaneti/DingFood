@@ -23,7 +23,7 @@ public sealed class SetJobTitleFeaturesCommandHandlerTests
     }
 
     private static JobTitle CreateActiveJobTitle(long companyId = 1, string name = "Garçom")
-        => JobTitle.Create(companyId, name).Value;
+        => JobTitle.Create(companyId, null, name).Value;
 
     [Fact]
     public async Task Handle_JobTitleNotFound_ShouldReturnFailureWithoutTouchingLinks()

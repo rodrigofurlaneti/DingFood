@@ -1,8 +1,13 @@
 ﻿using DingFood.Application.Abstractions.Authentication;
 using DingFood.Application.Abstractions.Messaging;
+using DingFood.Application.Abstractions.Tenancy;
 using DingFood.Domain.Entities;
 using DingFood.Domain.Primitives;
 using DingFood.Domain.Repositories;
+using MediatR;
+using System.Numerics;
+using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace DingFood.Application.Features.Companies.Register;
 
@@ -10,6 +15,7 @@ internal sealed class RegisterCompanyCommandHandler : BaseCommandHandler<Registe
 {
     private readonly ICompanyRepository _companyRepository;
     private readonly IBranchRepository _branchRepository;
+    private readonly IBrandRepository _brandRepository;
     private readonly IRoleRepository _roleRepository;
     private readonly IAppUserRepository _userRepository;
     private readonly IUserRoleRepository _userRoleRepository;
@@ -18,6 +24,7 @@ internal sealed class RegisterCompanyCommandHandler : BaseCommandHandler<Registe
     private readonly ICategoryRepository _categoryRepository;
     private readonly IJobTitleRepository _jobTitleRepository;
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly IBusinessGroupRepository _groupsRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -33,6 +40,7 @@ internal sealed class RegisterCompanyCommandHandler : BaseCommandHandler<Registe
     public RegisterCompanyCommandHandler(
         ICompanyRepository companyRepository,
         IBranchRepository branchRepository,
+        IBrandRepository brandRepository,
         IRoleRepository roleRepository,
         IAppUserRepository userRepository,
         IUserRoleRepository userRoleRepository,
@@ -43,11 +51,13 @@ internal sealed class RegisterCompanyCommandHandler : BaseCommandHandler<Registe
         IEmployeeRepository employeeRepository,
         IPasswordHasher passwordHasher,
         ILogTrackerRepository logRepository,
-        IUnitOfWork unitOfWork)
+        IBusinessGroupRepository groupsRepository,
+    IUnitOfWork unitOfWork)
         : base(logRepository, unitOfWork)
     {
         _companyRepository = companyRepository;
         _branchRepository = branchRepository;
+        _brandRepository = brandRepository;
         _roleRepository = roleRepository;
         _userRepository = userRepository;
         _userRoleRepository = userRoleRepository;
@@ -57,6 +67,7 @@ internal sealed class RegisterCompanyCommandHandler : BaseCommandHandler<Registe
         _jobTitleRepository = jobTitleRepository;
         _employeeRepository = employeeRepository;
         _passwordHasher = passwordHasher;
+        _groupsRepository = groupsRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -82,15 +93,12 @@ internal sealed class RegisterCompanyCommandHandler : BaseCommandHandler<Registe
                     return Result.Failure<RegisterCompanyResponse>(adminResult.Error);
                 var user = adminResult.Value;
 
-                // Adiciona o Id do usuário recém-criado ao log de auditoria
                 userIdBox.Value = user.Id;
 
                 return Result.Success(new RegisterCompanyResponse(company.Id, branch.Id, user.Id));
             });
     }
 
-    // Fase Sonar HIGH (2026-08-24): extraído do Handle para reduzir Cognitive Complexity de
-    // 16 para o limite de 15 — mesma sequência de passos, sem mudança de comportamento.
     private async Task<Result<(Company Company, Branch Branch)>> SetupCompanyStructureAsync(
         RegisterCompanyCommand request, CancellationToken cancellationToken)
     {
@@ -106,18 +114,21 @@ internal sealed class RegisterCompanyCommandHandler : BaseCommandHandler<Registe
             return Result.Failure<(Company, Branch)>(branchResult.Error);
         var branch = branchResult.Value;
 
-        await CreateDefaultDiningTablesAsync(branch.Id, cancellationToken);
-        await CreateDefaultComandasAsync(branch.Id, cancellationToken);
-
         return Result.Success((company, branch));
     }
 
     private async Task<Result<AppUser>> SetupAdminAccountAsync(
-        RegisterCompanyCommand request, long companyId, long branchId, CancellationToken cancellationToken)
+    RegisterCompanyCommand request,
+    long companyId,
+    long branchId,
+    CancellationToken cancellationToken)
     {
-        var jobTitleResult = await CreateAdminJobTitleAsync(companyId, cancellationToken);
+        var branch = await _branchRepository.GetByIdAsync(branchId, cancellationToken);
+        long? brandId = branch.BrandId;
+        var jobTitleResult = await CreateAdminJobTitleAsync(companyId, brandId ?? 0, cancellationToken);
         if (jobTitleResult.IsFailure)
             return Result.Failure<AppUser>(jobTitleResult.Error);
+
         var jobTitle = jobTitleResult.Value;
 
         var employeeResult = await CreateAdminEmployeeAsync(request, branchId, jobTitle.Id, cancellationToken);
@@ -159,19 +170,6 @@ internal sealed class RegisterCompanyCommandHandler : BaseCommandHandler<Registe
         return Result.Success();
     }
 
-    private async Task<Result<Company>> CreateCompanyAsync(RegisterCompanyCommand request, CancellationToken cancellationToken)
-    {
-        var companyResult = Company.Create(
-            request.LegalName, request.TradeName, request.Cnpj, request.CompanyEmail, request.CompanyPhone);
-        if (companyResult.IsFailure)
-            return companyResult;
-
-        await _companyRepository.AddAsync(companyResult.Value, cancellationToken);
-        await _unitOfWork.CommitAsync(cancellationToken);
-
-        return companyResult;
-    }
-
     private async Task CreateDefaultCategoriesAsync(long companyId, CancellationToken cancellationToken)
     {
         var displayOrder = 0;
@@ -185,42 +183,23 @@ internal sealed class RegisterCompanyCommandHandler : BaseCommandHandler<Registe
 
     private async Task<Result<Branch>> CreateBranchAsync(RegisterCompanyCommand request, long companyId, CancellationToken cancellationToken)
     {
+        var nameBranch = "Filial " + request.BranchName;
         var branchResult = Branch.Create(
-            companyId, request.BranchName, request.BranchCnpj, request.CompanyPhone,
+            companyId, nameBranch, request.BranchCnpj, request.CompanyPhone,
             request.AddressStreet, request.AddressNumber, request.AddressDistrict,
             request.AddressCity, request.AddressState, request.AddressZipCode);
         if (branchResult.IsFailure)
             return branchResult;
 
         await _branchRepository.AddAsync(branchResult.Value, cancellationToken);
-        await _unitOfWork.CommitAsync(cancellationToken); // precisa do Branch.Id para mesas/comandas/funcionário
+        await _unitOfWork.CommitAsync(cancellationToken); 
 
         return branchResult;
     }
 
-    private async Task CreateDefaultDiningTablesAsync(long branchId, CancellationToken cancellationToken)
+    private async Task<Result<JobTitle>> CreateAdminJobTitleAsync(long companyId, long brandId, CancellationToken cancellationToken)
     {
-        for (var number = 1; number <= 5; number++)
-        {
-            var tableResult = DiningTable.Create(branchId, tableStatusId: 1, number: number, capacity: 4);
-            if (tableResult.IsSuccess)
-                await _diningTableRepository.AddAsync(tableResult.Value, cancellationToken);
-        }
-    }
-
-    private async Task CreateDefaultComandasAsync(long branchId, CancellationToken cancellationToken)
-    {
-        for (var number = 1; number <= 5; number++)
-        {
-            var comandaResult = Comanda.Create(branchId, comandaStatusId: 1, code: number.ToString("D3"));
-            if (comandaResult.IsSuccess)
-                await _comandaRepository.AddAsync(comandaResult.Value, cancellationToken);
-        }
-    }
-
-    private async Task<Result<JobTitle>> CreateAdminJobTitleAsync(long companyId, CancellationToken cancellationToken)
-    {
-        var jobTitleResult = JobTitle.Create(companyId, "Administrador");
+        var jobTitleResult = JobTitle.Create(companyId, brandId, "Administrador");
         if (jobTitleResult.IsFailure)
             return jobTitleResult;
 
@@ -280,5 +259,29 @@ internal sealed class RegisterCompanyCommandHandler : BaseCommandHandler<Registe
         await _unitOfWork.CommitAsync(cancellationToken);
 
         return Result.Success();
+    }
+
+    private async Task<Result<Company>> CreateCompanyAsync(RegisterCompanyCommand request, CancellationToken cancellationToken)
+    {
+        string primeiroNome = request.LegalName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? request.LegalName;
+        string nameGrupo = "Grupo " + primeiroNome;
+
+        var groupResult = BusinessGroup.Create(nameGrupo);
+        if (groupResult.IsFailure)
+            return Result.Failure<Company>(groupResult.Error); // Sempre valide o Result do grupo também
+
+        var companyResult = Company.Create(
+            request.LegalName, request.TradeName, request.Cnpj, request.CompanyEmail, request.CompanyPhone);
+        if (companyResult.IsFailure)
+            return companyResult;
+
+        var association = companyResult.Value.AssignToGroup(groupResult.Value);
+        if (association.IsFailure)
+            return Result.Failure<Company>(association.Error);
+
+        await _companyRepository.AddAsync(companyResult.Value, cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
+
+        return companyResult;
     }
 }

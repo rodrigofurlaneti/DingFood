@@ -16,7 +16,7 @@ namespace DingFood.Tests.Infrastructure.Persistence.Repositories
         }
 
         private static JobTitle CreateJobTitle(long companyId = 1, string name = "Garçom") =>
-            JobTitle.Create(companyId, name).Value;
+            JobTitle.Create(companyId, null, name).Value;
 
         private async Task<JobTitle> SeedAsync(JobTitle jobTitle)
         {

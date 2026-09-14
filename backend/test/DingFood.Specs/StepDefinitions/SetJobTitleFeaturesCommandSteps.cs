@@ -31,12 +31,12 @@ public sealed class SetJobTitleFeaturesCommandSteps
     public void GivenExisteOCargoAtivo(long jobTitleId)
         => _jobTitleRepository
             .Setup(r => r.GetByIdAsync(jobTitleId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(JobTitle.Create(1, "Garcom").Value);
+            .ReturnsAsync(JobTitle.Create(1, null, "Garcom").Value);
 
     [Given(@"existe o cargo (.*) inativo")]
     public void GivenExisteOCargoInativo(long jobTitleId)
     {
-        var jobTitle = JobTitle.Create(1, "Garcom").Value;
+        var jobTitle = JobTitle.Create(1, null, "Garcom").Value;
         jobTitle.Deactivate();
         _jobTitleRepository
             .Setup(r => r.GetByIdAsync(jobTitleId, It.IsAny<CancellationToken>()))

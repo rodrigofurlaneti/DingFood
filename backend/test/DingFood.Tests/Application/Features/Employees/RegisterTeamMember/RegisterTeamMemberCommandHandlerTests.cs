@@ -53,7 +53,7 @@ public sealed class RegisterTeamMemberCommandHandlerTests
             extraFeatureIds);
 
     private static JobTitle CreateActiveJobTitle(long companyId = 1, string name = "Garcom")
-        => JobTitle.Create(companyId, name).Value;
+        => JobTitle.Create(companyId, null, name).Value;
 
     private static Role CreateActiveRole(long companyId = 1, string name = "Garcom")
         => Role.Create(companyId, name, null).Value;

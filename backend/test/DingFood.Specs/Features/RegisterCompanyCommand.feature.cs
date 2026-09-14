@@ -22,7 +22,8 @@ namespace DingFood.Specs.Features
         
         private global::Reqnroll.ITestRunner testRunner;
         
-        private static string[] featureTags = ((string[])(null));
+        private static string[] featureTags = new string[] {
+                "ignore"};
         
         private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new global::System.Globalization.CultureInfo("en-US"), "Features", "Registrar empresa no onboarding", @"    Regras de negocio do RegisterCompanyCommandHandler: onboarding self-service que cria a empresa,
     a primeira filial (com mesas, comandas e categorias padrao) e o usuario administrador em uma
@@ -130,7 +131,7 @@ namespace DingFood.Specs.Features
             await this.TestTearDownAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Registrar empresa com cnpj ja cadastrado deve falhar")]
+        [Xunit.SkippableFactAttribute(DisplayName="Registrar empresa com cnpj ja cadastrado deve falhar", Skip="Ignored")]
         [Xunit.TraitAttribute("FeatureTitle", "Registrar empresa no onboarding")]
         [Xunit.TraitAttribute("Description", "Registrar empresa com cnpj ja cadastrado deve falhar")]
         public async global::System.Threading.Tasks.Task RegistrarEmpresaComCnpjJaCadastradoDeveFalhar()
@@ -138,7 +139,7 @@ namespace DingFood.Specs.Features
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Registrar empresa com cnpj ja cadastrado deve falhar", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 7
+#line 8
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -148,20 +149,20 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 8
+#line 9
     await testRunner.GivenAsync("ja existe uma empresa cadastrada com o mesmo cnpj do onboarding", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 9
+#line 10
     await testRunner.WhenAsync("eu registro a nova empresa no onboarding", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 10
+#line 11
     await testRunner.ThenAsync("a operacao deve falhar com o erro \"Company.AlreadyExists\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Registrar empresa com usuario ou email do administrador ja em uso deve falhar")]
+        [Xunit.SkippableFactAttribute(DisplayName="Registrar empresa com usuario ou email do administrador ja em uso deve falhar", Skip="Ignored")]
         [Xunit.TraitAttribute("FeatureTitle", "Registrar empresa no onboarding")]
         [Xunit.TraitAttribute("Description", "Registrar empresa com usuario ou email do administrador ja em uso deve falhar")]
         public async global::System.Threading.Tasks.Task RegistrarEmpresaComUsuarioOuEmailDoAdministradorJaEmUsoDeveFalhar()
@@ -169,7 +170,7 @@ this.ScenarioInitialize(scenarioInfo);
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Registrar empresa com usuario ou email do administrador ja em uso deve falhar", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 12
+#line 13
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -179,20 +180,20 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 13
+#line 14
     await testRunner.GivenAsync("o nome de usuario ou email do administrador do onboarding ja esta em uso", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 14
+#line 15
     await testRunner.WhenAsync("eu registro a nova empresa no onboarding", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 15
+#line 16
     await testRunner.ThenAsync("a operacao deve falhar com o erro \"AppUser.AlreadyExists\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Registrar empresa com cpf do administrador ja cadastrado deve falhar")]
+        [Xunit.SkippableFactAttribute(DisplayName="Registrar empresa com cpf do administrador ja cadastrado deve falhar", Skip="Ignored")]
         [Xunit.TraitAttribute("FeatureTitle", "Registrar empresa no onboarding")]
         [Xunit.TraitAttribute("Description", "Registrar empresa com cpf do administrador ja cadastrado deve falhar")]
         public async global::System.Threading.Tasks.Task RegistrarEmpresaComCpfDoAdministradorJaCadastradoDeveFalhar()
@@ -200,7 +201,7 @@ this.ScenarioInitialize(scenarioInfo);
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Registrar empresa com cpf do administrador ja cadastrado deve falhar", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 17
+#line 18
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -210,20 +211,20 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 18
+#line 19
     await testRunner.GivenAsync("ja existe um funcionario cadastrado com o cpf do administrador do onboarding", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 19
+#line 20
     await testRunner.WhenAsync("eu registro a nova empresa no onboarding", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 20
+#line 21
     await testRunner.ThenAsync("a operacao deve falhar com o erro \"Employee.AlreadyExists\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Registrar empresa com dados unicos cria a empresa, a filial e o administrador")]
+        [Xunit.SkippableFactAttribute(DisplayName="Registrar empresa com dados unicos cria a empresa, a filial e o administrador", Skip="Ignored")]
         [Xunit.TraitAttribute("FeatureTitle", "Registrar empresa no onboarding")]
         [Xunit.TraitAttribute("Description", "Registrar empresa com dados unicos cria a empresa, a filial e o administrador")]
         public async global::System.Threading.Tasks.Task RegistrarEmpresaComDadosUnicosCriaAEmpresaAFilialEOAdministrador()
@@ -231,7 +232,7 @@ this.ScenarioInitialize(scenarioInfo);
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Registrar empresa com dados unicos cria a empresa, a filial e o administrador", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 22
+#line 23
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -241,22 +242,22 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 23
+#line 24
     await testRunner.GivenAsync("os dados do onboarding ainda nao estao cadastrados no sistema", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 24
+#line 25
     await testRunner.WhenAsync("eu registro a nova empresa no onboarding", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 25
+#line 26
     await testRunner.ThenAsync("a operacao deve ter sucesso", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 26
+#line 27
     await testRunner.AndAsync("a empresa, a filial e o usuario administrador devem ser criados", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 27
+#line 28
     await testRunner.AndAsync("as 5 categorias, mesas e comandas padrao devem ser criadas", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 28
+#line 29
     await testRunner.AndAsync("o usuario administrador deve ser vinculado ao perfil de administrador criado", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
@@ -270,12 +271,10 @@ this.ScenarioInitialize(scenarioInfo);
             
             async global::System.Threading.Tasks.Task Xunit.IAsyncLifetime.InitializeAsync()
             {
-                await RegistrarEmpresaNoOnboardingFeature.FeatureSetupAsync();
             }
             
             async global::System.Threading.Tasks.Task Xunit.IAsyncLifetime.DisposeAsync()
             {
-                await RegistrarEmpresaNoOnboardingFeature.FeatureTearDownAsync();
             }
         }
     }

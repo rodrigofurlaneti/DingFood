@@ -21,7 +21,7 @@ public sealed class GetJobTitlesQueryHandlerTests
     }
 
     private static JobTitle CreateJobTitle(string name, long companyId = 1)
-        => JobTitle.Create(companyId, name).Value;
+        => JobTitle.Create(companyId, null, name).Value;
 
     [Fact]
     public async Task Handle_NoJobTitlesForCompany_ShouldReturnEmptyCollection()
