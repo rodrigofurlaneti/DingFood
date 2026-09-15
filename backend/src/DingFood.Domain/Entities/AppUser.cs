@@ -1,82 +1,60 @@
-﻿using DingFood.Domain.Primitives;
+using CheckPay.Domain.Primitives;
+using System;
 
-namespace DingFood.Domain.Entities;
+namespace CheckPay.Domain.Entities;
 
-public sealed class AppUser : AggregateRoot
+public sealed class Category : AggregateRoot
 {
-    private const int MaxFailedAccessAttempts = 5;
-    private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
-
-    public long CompanyId { get; private set; }
-    public long? EmployeeId { get; private set; }
-    public string UserName { get; private set; } = null!;
-    public string Email { get; private set; } = null!;
-    public string PasswordHash { get; private set; } = null!;
-    public string? PasswordSalt { get; }
-    public int FailedAccessCount { get; private set; }
-    public DateTime? LockoutEndAt { get; private set; }
-    public DateTime? LastLoginAt { get; private set; }
+    public long AppUserId { get; private set; }
+    public string Name { get; private set; } = null!;
+    public string Type { get; private set; } = null!; // INCOME or EXPENSE
+    public string? ColorHex { get; private set; }
+    public string? Icon { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
     public bool IsActive { get; private set; }
 
-    private AppUser() : base(0) { }
+    private Category() : base(0) { }
 
-    private AppUser(long companyId, long? employeeId, string userName, string email, string passwordHash) : base(0)
+    private Category(long appUserId, string name, string type, string? colorHex, string? icon) : base(0)
     {
-        CompanyId = companyId;
-        EmployeeId = employeeId;
-        UserName = userName;
-        Email = email;
-        PasswordHash = passwordHash;
-        FailedAccessCount = 0;
+        AppUserId = appUserId;
+        Name = name;
+        Type = type;
+        ColorHex = colorHex;
+        Icon = icon;
         IsActive = true;
-        CreatedAt = DateTime.Now;
+        CreatedAt = DateTime.UtcNow;
     }
 
-    public static Result<AppUser> Create(long companyId, long? employeeId, string userName, string email, string passwordHash)
+    public static Result<Category> Create(long appUserId, string name, string type, string? colorHex, string? icon)
     {
-        if (string.IsNullOrWhiteSpace(userName))
-            return Result.Failure<AppUser>(new Error("AppUser.EmptyUserName", "UserName is required."));
-        if (string.IsNullOrWhiteSpace(email))
-            return Result.Failure<AppUser>(new Error("AppUser.EmptyEmail", "Email is required."));
-        if (string.IsNullOrWhiteSpace(passwordHash))
-            return Result.Failure<AppUser>(new Error("AppUser.EmptyPasswordHash", "Password hash is required."));
+        if (appUserId <= 0)
+            return Result.Failure<Category>(new Error("Category.InvalidUserId", "A valid AppUserId is required."));
+        if (string.IsNullOrWhiteSpace(name))
+            return Result.Failure<Category>(new Error("Category.EmptyName", "Name is required."));
+        if (type != "INCOME" && type != "EXPENSE")
+            return Result.Failure<Category>(new Error("Category.InvalidType", "Type must be INCOME or EXPENSE."));
 
-        return Result.Success(new AppUser(companyId, employeeId, userName, email, passwordHash));
+        return Result.Success(new Category(appUserId, name, type, colorHex, icon));
     }
 
-    public bool IsLockedOut() => LockoutEndAt.HasValue && LockoutEndAt.Value > DateTime.Now;
-
-    public void RegisterLoginFailure()
+    public Result Update(string name, string? colorHex, string? icon)
     {
-        FailedAccessCount++;
-        if (FailedAccessCount >= MaxFailedAccessAttempts)
-            LockoutEndAt = DateTime.Now.Add(LockoutDuration);
-        UpdatedAt = DateTime.Now;
-    }
+        if (string.IsNullOrWhiteSpace(name))
+            return Result.Failure(new Error("Category.EmptyName", "Name is required."));
 
-    public void RegisterLoginSuccess()
-    {
-        FailedAccessCount = 0;
-        LockoutEndAt = null;
-        LastLoginAt = DateTime.Now;
-        UpdatedAt = DateTime.Now;
-    }
+        Name = name;
+        ColorHex = colorHex;
+        Icon = icon;
+        UpdatedAt = DateTime.UtcNow;
 
-    public Result ChangePasswordHash(string passwordHash)
-    {
-        if (string.IsNullOrWhiteSpace(passwordHash))
-            return Result.Failure(new Error("AppUser.EmptyPasswordHash", "Password hash is required."));
-
-        PasswordHash = passwordHash;
-        UpdatedAt = DateTime.Now;
         return Result.Success();
     }
 
     public void Deactivate()
     {
         IsActive = false;
-        UpdatedAt = DateTime.Now;
+        UpdatedAt = DateTime.UtcNow;
     }
 }
