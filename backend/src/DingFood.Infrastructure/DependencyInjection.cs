@@ -8,7 +8,9 @@ using DingFood.Domain.Entities;
 using DingFood.Domain.Repositories;
 using DingFood.Infrastructure.Authentication;
 using DingFood.Infrastructure.Fiscal;
+using DingFood.Application.Abstractions.Integrations.Cnpja;
 using DingFood.Infrastructure.Integrations.Asaas;
+using DingFood.Infrastructure.Integrations.Cnpja;
 using DingFood.Infrastructure.Integrations.Ifood;
 using DingFood.Infrastructure.Integrations.Keeta;
 using DingFood.Infrastructure.Integrations.WhatsApp;
@@ -236,7 +238,10 @@ public static class DependencyInjection
             client.BaseAddress = new Uri(settings.BaseUrl);
             client.Timeout = TimeSpan.FromSeconds(30);
         });
-
+        services.Configure<CnpjaSettings>(configuration.GetSection("Cnpja"));
+        services.AddScoped<ICnpjQueryRepository, CnpjQueryRepository>();
+        services.AddSingleton<ICnpjaOptions, CnpjaOptionsProvider>();
+        services.AddHttpClient<ICnpjaClient, CnpjaClient>(c => c.Timeout = TimeSpan.FromSeconds(15));
         return services;
     }
 }

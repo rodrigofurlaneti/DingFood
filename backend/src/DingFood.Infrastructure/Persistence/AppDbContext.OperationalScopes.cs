@@ -17,7 +17,11 @@ public sealed partial class AppDbContext
     {
         "AppFeature", "Permission", "UnitOfMeasure", "TableStatus", "ComandaStatus", "OrderStatus",
         "OrderItemStatus", "CashSessionStatus", "CashMovementType", "StockMovementType", "PaymentMethod",
-        "CostType", "ShiftClosingStatus", "PromotionType", "ReservationStatus"
+        "CostType", "ShiftClosingStatus", "PromotionType", "ReservationStatus",
+        // Snapshot da consulta pública de CNPJ (CNPJá/Receita Federal): dado público, igual para
+        // todos os tenants, sem CompanyId. Declarado aqui — e não por FK — porque é justamente
+        // esse compartilhamento que protege a cota de 5 consultas/minuto da API pública.
+        "CnpjQuery"
     };
     internal static readonly HashSet<string> IdentityTables = new(StringComparer.Ordinal)
     { "AppUser", "AppUserCompany", "AppUserBranch", "RefreshToken", "AccessLog", "LogTracker", "BusinessGroup", "Company", "Brand", "CompanyBrand", "UserRole" };

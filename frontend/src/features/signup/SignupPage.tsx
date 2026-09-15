@@ -7,6 +7,8 @@ import InputMask from "react-input-mask";
 import { toast } from "sonner";
 import { signupApi } from "./signupApi";
 import { signupSchema, SignupFormData } from "./signupSchema";
+import { useCnpjAutofill } from "./useCnpjAutofill";
+import { phoneMaskFor } from "./cnpjUtils";
 import "./SignupPage.css";
 
 function EyeIcon() {
@@ -39,6 +41,8 @@ export function SignupPage() {
         handleSubmit,
         control,
         watch,
+        setValue,
+        getValues,
         formState: { errors, isSubmitting },
     } = useForm<SignupFormData>({
         resolver: zodResolver(signupSchema),
@@ -47,6 +51,12 @@ export function SignupPage() {
             branchName: "Matriz",
         },
     });
+
+    // Consulta o CNPJ quando o usuário sai do campo e preenche os dados correlatos.
+    const { status: cnpjStatus, handleCnpjBlur, retryLookup } = useCnpjAutofill({ getValues, setValue });
+
+    // Fixo tem 10 dígitos e celular 11 — a máscara precisa acompanhar o que vier da Receita.
+    const companyPhoneValue = watch("companyPhone") || "";
 
     // Valor atual da senha, lido a cada digitação para o checklist dinâmico
     const passwordValue = watch("adminPassword") || "";
@@ -105,6 +115,100 @@ export function SignupPage() {
                 <section className="form-section">
                     <h2 className="section-title">📋 Dados da Empresa</h2>
 
+                    <div className="form-row form-row-full">
+                        {/* CNPJ — primeiro campo: é ele que preenche todo o resto do formulário */}
+                        <div className="form-group cnpj-field">
+                            <label htmlFor="cnpj" className="form-label">
+                                CNPJ *
+                            </label>
+                            <Controller
+                                name="cnpj"
+                                control={control}
+                                render={({ field }: any) => (
+                                    <InputMask
+                                        mask="99.999.999/9999-99"
+                                        {...field}
+                                        onBlur={(event: any) => {
+                                            field.onBlur();
+                                            handleCnpjBlur(event.target.value);
+                                        }}
+                                        placeholder="00.000.000/0000-00"
+                                    >
+                                        {(inputProps: any) => (
+                                            <input
+                                                {...inputProps}
+                                                id="cnpj"
+                                                data-testid="cnpj"
+                                                type="text"
+                                                inputMode="numeric"
+                                                className={`form-input form-input-lg ${errors.cnpj
+                                                    ? "input-error"
+                                                    : ""
+                                                    }`}
+                                            />
+                                        )}
+                                    </InputMask>
+                                )}
+                            />
+                            {errors.cnpj && (
+                                <span className="error-message">
+                                    {errors.cnpj.message}
+                                </span>
+                            )}
+
+                            {/* Retorno da consulta automática na Receita Federal */}
+                            {cnpjStatus.state === "idle" && !errors.cnpj && (
+                                <span className="helper-text">
+                                    Digite o CNPJ e saia do campo — buscamos na Receita Federal e preenchemos o resto para você.
+                                </span>
+                            )}
+
+                            {cnpjStatus.state === "loading" && (
+                                <span className="cnpj-status cnpj-status-loading" data-testid="cnpj-status">
+                                    <span className="cnpj-spinner" aria-hidden="true" />
+                                    Consultando CNPJ na Receita Federal…
+                                </span>
+                            )}
+
+                            {cnpjStatus.state === "error" && (
+                                <span className="cnpj-status cnpj-status-error" data-testid="cnpj-status" role="status">
+                                    {cnpjStatus.message}{" "}
+                                    <button type="button" className="cnpj-retry-btn" onClick={retryLookup}>
+                                        tentar de novo
+                                    </button>
+                                </span>
+                            )}
+
+                            {cnpjStatus.state === "filled" && (
+                                <>
+                                    <span className="cnpj-status cnpj-status-ok" data-testid="cnpj-status" role="status">
+                                        ✓ {cnpjStatus.data.legalName}
+                                        {cnpjStatus.filledCount > 0 &&
+                                            ` — ${cnpjStatus.filledCount} campo${cnpjStatus.filledCount > 1 ? "s" : ""} preenchido${cnpjStatus.filledCount > 1 ? "s" : ""}`}
+                                        {cnpjStatus.keptCount > 0 &&
+                                            ` (${cnpjStatus.keptCount} mantido${cnpjStatus.keptCount > 1 ? "s" : ""} como você digitou)`}
+                                    </span>
+
+                                    {cnpjStatus.data.statusText &&
+                                        cnpjStatus.data.statusText.toLowerCase() !== "ativa" && (
+                                            <span className="cnpj-status cnpj-status-warn">
+                                                ⚠ Situação cadastral: {cnpjStatus.data.statusText}
+                                                {cnpjStatus.data.reasonText ? ` — ${cnpjStatus.data.reasonText}` : ""}
+                                            </span>
+                                        )}
+
+                                    {cnpjStatus.data.staleData && (
+                                        <span className="cnpj-status cnpj-status-warn">
+                                            Dados de{" "}
+                                            {new Date(cnpjStatus.data.queriedAt).toLocaleDateString("pt-BR")} — a
+                                            consulta online falhou agora.
+                                        </span>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="form-row">
                         {/* Razão Social */}
                         <div className="form-group">
@@ -149,63 +253,6 @@ export function SignupPage() {
                     </div>
 
                     <div className="form-row">
-                        {/* CNPJ com Mask */}
-                        <div className="form-group">
-                            <label htmlFor="cnpj" className="form-label">
-                                CNPJ *
-                            </label>
-                            <Controller
-                                name="cnpj"
-                                control={control}
-                                render={({ field }: any) => (
-                                    <InputMask
-                                        mask="99.999.999/0000-99"
-                                        {...field}
-                                        placeholder="00.000.000/0000-00"
-                                    >
-                                        {(inputProps: any) => (
-                                            <input
-                                                {...inputProps}
-                                                id="cnpj"
-                                                data-testid="cnpj"
-                                                type="text"
-                                                className={`form-input ${errors.cnpj
-                                                    ? "input-error"
-                                                    : ""
-                                                    }`}
-                                            />
-                                        )}
-                                    </InputMask>
-                                )}
-                            />
-                            {errors.cnpj && (
-                                <span className="error-message">
-                                    {errors.cnpj.message}
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Primeira Filial (Desabilitado) */}
-                        <div className="form-group">
-                            <label htmlFor="branchName" className="form-label">
-                                Primeira filial *
-                            </label>
-                            <input
-                                id="branchName"
-                                data-testid="branchName"
-                                type="text"
-                                value="Matriz"
-                                disabled
-                                className="form-input form-input-disabled"
-                                title="A primeira filial é automaticamente 'Matriz'"
-                            />
-                            <span className="helper-text">
-                                Automaticamente definido como Matriz
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="form-row">
                         {/* Telefone da Empresa (opcional) */}
                         <div className="form-group">
                             <label htmlFor="companyPhone" className="form-label">
@@ -216,7 +263,7 @@ export function SignupPage() {
                                 control={control}
                                 render={({ field }: any) => (
                                     <InputMask
-                                        mask="(99) 99999-9999"
+                                        mask={phoneMaskFor(companyPhoneValue)}
                                         {...field}
                                         placeholder="(00) 00000-0000"
                                     >
@@ -250,7 +297,7 @@ export function SignupPage() {
                                 control={control}
                                 render={({ field }: any) => (
                                     <InputMask
-                                        mask="99.999.999/0000-99"
+                                        mask="99.999.999/9999-99"
                                         {...field}
                                         placeholder="00.000.000/0000-00"
                                     >
@@ -274,6 +321,27 @@ export function SignupPage() {
                             )}
                             <span className="helper-text">
                                 Deixe em branco se for igual ao CNPJ da empresa
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="form-row form-row-full">
+                        {/* Primeira Filial (Desabilitado) */}
+                        <div className="form-group">
+                            <label htmlFor="branchName" className="form-label">
+                                Primeira filial *
+                            </label>
+                            <input
+                                id="branchName"
+                                data-testid="branchName"
+                                type="text"
+                                value="Matriz"
+                                disabled
+                                className="form-input form-input-disabled"
+                                title="A primeira filial é automaticamente 'Matriz'"
+                            />
+                            <span className="helper-text">
+                                Automaticamente definido como Matriz
                             </span>
                         </div>
                     </div>

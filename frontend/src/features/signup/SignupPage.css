@@ -11,13 +11,13 @@
 }
 
 .signup-form {
-    width: min(520px, 100%);
+    width: min(640px, 100%);
     background: var(--bg-raise, #ffffff);
     border: 1px solid var(--line, #e0e0e0);
     border-radius: 16px;
-    padding: 40px 32px;
+    padding: 40px 36px;
     display: grid;
-    gap: 24px;
+    gap: 32px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     animation: slideUp 0.3s ease-out;
 }
@@ -70,7 +70,7 @@
 
 .form-section {
     display: grid;
-    gap: 16px;
+    gap: 20px;
 }
 
 .section-title {
@@ -87,7 +87,7 @@
 .form-divider {
     border: none;
     border-top: 1px solid var(--line, #e0e0e0);
-    margin: 8px 0;
+    margin: 0;
 }
 
 /* ========================================
@@ -97,12 +97,19 @@
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 20px;
+}
+
+/* Linha de coluna única — usada pelo CNPJ, que precisa de largura inteira
+   para o campo e para as mensagens de status da consulta. */
+.form-row-full {
+    grid-template-columns: 1fr;
 }
 
 .form-group {
     display: grid;
-    gap: 6px;
+    gap: 8px;
+    align-content: start;
 }
 
 /* Responsividade para mobile */
@@ -112,8 +119,8 @@
     }
 
     .signup-form {
-        padding: 24px 16px;
-        gap: 16px;
+        padding: 28px 18px;
+        gap: 24px;
     }
 
     .brand {
@@ -430,5 +437,101 @@
 
     30% {
         opacity: 1;
+    }
+}
+
+/* ========================================
+   STATUS DA CONSULTA DE CNPJ
+   ======================================== */
+
+.cnpj-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    margin-top: 4px;
+    line-height: 1.4;
+    animation: slideDown 0.2s ease-out;
+}
+
+.cnpj-status-loading {
+    color: var(--ink-dim, #666);
+}
+
+.cnpj-status-ok {
+    color: #16a34a;
+    font-weight: 500;
+}
+
+.cnpj-status-warn {
+    color: #b45309;
+}
+
+.cnpj-status-error {
+    color: #dc2626;
+    font-weight: 500;
+}
+
+.cnpj-retry-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: var(--primary, #ff6b35);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.cnpj-retry-btn:hover {
+    color: var(--primary-dark, #e55a25);
+}
+
+.cnpj-retry-btn:focus-visible {
+    outline: 2px solid var(--primary, #ff6b35);
+    outline-offset: 2px;
+    border-radius: 3px;
+}
+
+.cnpj-spinner {
+    width: 12px;
+    height: 12px;
+    flex: none;
+    border: 2px solid var(--line, #e0e0e0);
+    border-top-color: var(--primary, #ff6b35);
+    border-radius: 50%;
+    animation: cnpjSpin 0.7s linear infinite;
+}
+
+@keyframes cnpjSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cnpj-spinner {
+        animation-duration: 2s;
+    }
+
+    .cnpj-status {
+        animation: none;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .cnpj-status-loading {
+        color: var(--ink-dim, #a0a0a0);
+    }
+
+    .cnpj-status-ok {
+        color: #4ade80;
+    }
+
+    .cnpj-status-warn {
+        color: #fbbf24;
+    }
+
+    .cnpj-status-error {
+        color: #f87171;
     }
 }

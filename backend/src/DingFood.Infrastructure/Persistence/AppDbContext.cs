@@ -51,6 +51,9 @@ public sealed partial class AppDbContext(DbContextOptions<AppDbContext> options,
     public DbSet<ProductOptionalExtra> ProductOptionalExtras => Set<ProductOptionalExtra>();
     public DbSet<ProductBoost> ProductBoosts => Set<ProductBoost>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
+    // Consulta pública de CNPJ (CNPJá). Tabela GLOBAL — intencionalmente SEM HasQueryFilter
+    // em OnModelCreating: dados públicos da Receita Federal não pertencem a nenhum tenant.
+    public DbSet<CnpjQuery> CnpjQueries => Set<CnpjQuery>();
     public DbSet<StockItem> StockItems => Set<StockItem>();
     public DbSet<Purchase> Purchases => Set<Purchase>();
     public DbSet<PurchaseItem> PurchaseItems => Set<PurchaseItem>();
