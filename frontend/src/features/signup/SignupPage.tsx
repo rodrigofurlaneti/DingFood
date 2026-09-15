@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -59,10 +59,13 @@ export function SignupPage() {
 
     const mutation = useMutation({
         mutationFn: (data: SignupFormData) => {
-            const cleanData = {
+            const cleanData: SignupFormData = {
                 ...data,
                 cnpj: data.cnpj.replace(/\D/g, ""),
                 adminCpf: data.adminCpf.replace(/\D/g, ""),
+                companyPhone: data.companyPhone ? data.companyPhone.replace(/\D/g, "") : undefined,
+                branchCnpj: data.branchCnpj ? data.branchCnpj.replace(/\D/g, "") : undefined,
+                addressZipCode: data.addressZipCode ? data.addressZipCode.replace(/\D/g, "") : undefined,
             };
             return signupApi(cleanData);
         },
@@ -201,11 +204,208 @@ export function SignupPage() {
                             </span>
                         </div>
                     </div>
+
+                    <div className="form-row">
+                        {/* Telefone da Empresa (opcional) */}
+                        <div className="form-group">
+                            <label htmlFor="companyPhone" className="form-label">
+                                Telefone da empresa <span className="optional-tag">(opcional)</span>
+                            </label>
+                            <Controller
+                                name="companyPhone"
+                                control={control}
+                                render={({ field }: any) => (
+                                    <InputMask
+                                        mask="(99) 99999-9999"
+                                        {...field}
+                                        placeholder="(00) 00000-0000"
+                                    >
+                                        {(inputProps: any) => (
+                                            <input
+                                                {...inputProps}
+                                                id="companyPhone"
+                                                data-testid="companyPhone"
+                                                type="text"
+                                                className={`form-input ${errors.companyPhone ? "input-error" : ""
+                                                    }`}
+                                            />
+                                        )}
+                                    </InputMask>
+                                )}
+                            />
+                            {errors.companyPhone && (
+                                <span className="error-message">
+                                    {errors.companyPhone.message}
+                                </span>
+                            )}
+                        </div>
+
+                        {/* CNPJ da Filial (opcional) */}
+                        <div className="form-group">
+                            <label htmlFor="branchCnpj" className="form-label">
+                                CNPJ da filial <span className="optional-tag">(opcional)</span>
+                            </label>
+                            <Controller
+                                name="branchCnpj"
+                                control={control}
+                                render={({ field }: any) => (
+                                    <InputMask
+                                        mask="99.999.999/0000-99"
+                                        {...field}
+                                        placeholder="00.000.000/0000-00"
+                                    >
+                                        {(inputProps: any) => (
+                                            <input
+                                                {...inputProps}
+                                                id="branchCnpj"
+                                                data-testid="branchCnpj"
+                                                type="text"
+                                                className={`form-input ${errors.branchCnpj ? "input-error" : ""
+                                                    }`}
+                                            />
+                                        )}
+                                    </InputMask>
+                                )}
+                            />
+                            {errors.branchCnpj && (
+                                <span className="error-message">
+                                    {errors.branchCnpj.message}
+                                </span>
+                            )}
+                            <span className="helper-text">
+                                Deixe em branco se for igual ao CNPJ da empresa
+                            </span>
+                        </div>
+                    </div>
                 </section>
 
                 <hr className="form-divider" />
 
-                {/* ============ SEÇÃO 2: DADOS DO ADMINISTRADOR ============ */}
+                {/* ============ SEÇÃO 2: ENDEREÇO (OPCIONAL) ============ */}
+                <section className="form-section">
+                    <h2 className="section-title">📍 Endereço <span className="optional-tag">(opcional)</span></h2>
+
+                    <div className="form-row">
+                        {/* CEP */}
+                        <div className="form-group">
+                            <label htmlFor="addressZipCode" className="form-label">
+                                CEP
+                            </label>
+                            <Controller
+                                name="addressZipCode"
+                                control={control}
+                                render={({ field }: any) => (
+                                    <InputMask
+                                        mask="99999-999"
+                                        {...field}
+                                        placeholder="00000-000"
+                                    >
+                                        {(inputProps: any) => (
+                                            <input
+                                                {...inputProps}
+                                                id="addressZipCode"
+                                                data-testid="addressZipCode"
+                                                type="text"
+                                                className={`form-input ${errors.addressZipCode ? "input-error" : ""
+                                                    }`}
+                                            />
+                                        )}
+                                    </InputMask>
+                                )}
+                            />
+                            {errors.addressZipCode && (
+                                <span className="error-message">
+                                    {errors.addressZipCode.message}
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Cidade */}
+                        <div className="form-group">
+                            <label htmlFor="addressCity" className="form-label">
+                                Cidade
+                            </label>
+                            <input
+                                id="addressCity"
+                                data-testid="addressCity"
+                                placeholder="Ex: São Paulo"
+                                className="form-input"
+                                {...register("addressCity")}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="form-row">
+                        {/* Rua */}
+                        <div className="form-group">
+                            <label htmlFor="addressStreet" className="form-label">
+                                Rua
+                            </label>
+                            <input
+                                id="addressStreet"
+                                data-testid="addressStreet"
+                                placeholder="Ex: Av. Paulista"
+                                className="form-input"
+                                {...register("addressStreet")}
+                            />
+                        </div>
+
+                        {/* Número */}
+                        <div className="form-group">
+                            <label htmlFor="addressNumber" className="form-label">
+                                Número
+                            </label>
+                            <input
+                                id="addressNumber"
+                                data-testid="addressNumber"
+                                placeholder="Ex: 1000"
+                                className="form-input"
+                                {...register("addressNumber")}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="form-row">
+                        {/* Bairro */}
+                        <div className="form-group">
+                            <label htmlFor="addressDistrict" className="form-label">
+                                Bairro
+                            </label>
+                            <input
+                                id="addressDistrict"
+                                data-testid="addressDistrict"
+                                placeholder="Ex: Centro"
+                                className="form-input"
+                                {...register("addressDistrict")}
+                            />
+                        </div>
+
+                        {/* Estado (UF) */}
+                        <div className="form-group">
+                            <label htmlFor="addressState" className="form-label">
+                                Estado (UF)
+                            </label>
+                            <input
+                                id="addressState"
+                                data-testid="addressState"
+                                placeholder="Ex: SP"
+                                maxLength={2}
+                                className={`form-input ${errors.addressState ? "input-error" : ""}`}
+                                style={{ textTransform: "uppercase" }}
+                                {...register("addressState")}
+                            />
+                            {errors.addressState && (
+                                <span className="error-message">
+                                    {errors.addressState.message}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </section>
+
+                <hr className="form-divider" />
+
+                {/* ============ SEÇÃO 3: DADOS DO ADMINISTRADOR ============ */}
                 <section className="form-section">
                     <h2 className="section-title">👤 Administrador</h2>
 
@@ -270,7 +470,7 @@ export function SignupPage() {
 
                 <hr className="form-divider" />
 
-                {/* ============ SEÇÃO 3: CREDENCIAIS DE ACESSO ============ */}
+                {/* ============ SEÇÃO 4: CREDENCIAIS DE ACESSO ============ */}
                 <section className="form-section">
                     <h2 className="section-title">🔐 Credenciais de Acesso</h2>
 
@@ -318,6 +518,9 @@ export function SignupPage() {
                                 {errors.adminEmail.message}
                             </span>
                         )}
+                        <span className="helper-text">
+                            Também será usado como e-mail de contato da empresa
+                        </span>
                     </div>
 
                     {/* Senha */}

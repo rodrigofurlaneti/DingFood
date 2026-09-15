@@ -18,10 +18,39 @@ export const signupSchema = z
             .refine((val: string) => /^\d{14}$/.test(val.replace(/\D/g, "")),
                 "CNPJ deve conter 14 dígitos"),
 
+        companyPhone: z
+            .string()
+            .optional()
+            .refine((val) => !val || /^\d{10,11}$/.test(val.replace(/\D/g, "")),
+                "Telefone deve conter 10 ou 11 dígitos"),
+
         branchName: z
             .literal("Matriz", {
                 errorMap: () => ({ message: "A filial deve ser 'Matriz'" }),
             }),
+
+        branchCnpj: z
+            .string()
+            .optional()
+            .refine((val) => !val || /^\d{14}$/.test(val.replace(/\D/g, "")),
+                "CNPJ da filial deve conter 14 dígitos"),
+
+        addressZipCode: z
+            .string()
+            .optional()
+            .refine((val) => !val || /^\d{8}$/.test(val.replace(/\D/g, "")),
+                "CEP deve conter 8 dígitos"),
+
+        addressStreet: z.string().optional(),
+        addressNumber: z.string().optional(),
+        addressDistrict: z.string().optional(),
+        addressCity: z.string().optional(),
+
+        addressState: z
+            .string()
+            .optional()
+            .refine((val) => !val || /^[A-Za-z]{2}$/.test(val),
+                "UF deve ter 2 letras (ex: SP)"),
 
         adminName: z
             .string()
