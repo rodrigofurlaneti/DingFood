@@ -1,5 +1,12 @@
 /* ========================================
-   SIGNUP PAGE - STYLES
+   SIGNUP PAGE
+
+   Usa os tokens do design system (src/styles/global.css). Não declara paleta
+   própria: as custom properties já trocam de valor em [data-theme="light"],
+   então quase nenhuma regra precisa de variante por tema.
+
+   O tema é escolha do usuário (themeStore.ts escreve data-theme no <html>),
+   não do sistema operacional — por isso nada de prefers-color-scheme aqui.
    ======================================== */
 
 .signup-container {
@@ -7,19 +14,19 @@
     display: grid;
     place-items: center;
     padding: 24px;
-    background: var(--bg-base, #f5f5f5);
+    background: var(--bg);
 }
 
 .signup-form {
     width: min(640px, 100%);
-    background: var(--bg-raise, #ffffff);
-    border: 1px solid var(--line, #e0e0e0);
+    background: var(--bg-raise);
+    border: 1px solid var(--line);
     border-radius: 16px;
     padding: 40px 36px;
     display: grid;
     gap: 32px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    animation: slideUp 0.3s ease-out;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+    animation: slideUp var(--duration-entrance) var(--ease-standard);
 }
 
 @keyframes slideUp {
@@ -44,20 +51,22 @@
 }
 
 .brand {
+    font-family: var(--font-display);
     font-size: 2.4rem;
     font-weight: 700;
-    color: var(--ink-norm, #1a1a1a);
+    letter-spacing: 0.02em;
+    color: var(--ink);
     margin-bottom: 8px;
 }
 
     .brand em {
         font-style: normal;
-        color: var(--primary, #ff6b35);
+        color: var(--amber);
     }
 
 .subtitle {
-    color: var(--ink-faint, #999999);
-    font-family: var(--font-cond, "Helvetica Neue", sans-serif);
+    color: var(--ink-faint);
+    font-family: var(--font-cond);
     letter-spacing: 0.22em;
     text-transform: uppercase;
     font-size: 0.78rem;
@@ -65,7 +74,7 @@
 }
 
 /* ========================================
-   FORM SECTIONS
+   SEÇÕES E GRID
    ======================================== */
 
 .form-section {
@@ -76,23 +85,19 @@
 .section-title {
     font-size: 0.95rem;
     font-weight: 600;
-    color: var(--ink-norm, #1a1a1a);
+    color: var(--ink);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin: 0;
     padding-bottom: 12px;
-    border-bottom: 2px solid var(--line, #e0e0e0);
+    border-bottom: 2px solid var(--line);
 }
 
 .form-divider {
     border: none;
-    border-top: 1px solid var(--line, #e0e0e0);
+    border-top: 1px solid var(--line-soft);
     margin: 0;
 }
-
-/* ========================================
-   FORM GROUP & ROWS
-   ======================================== */
 
 .form-row {
     display: grid;
@@ -100,8 +105,8 @@
     gap: 20px;
 }
 
-/* Linha de coluna única — usada pelo CNPJ, que precisa de largura inteira
-   para o campo e para as mensagens de status da consulta. */
+/* Linha de coluna única — usada pelo CNPJ e pelo CEP, que precisam de largura
+   inteira para o campo e para as mensagens de status da consulta. */
 .form-row-full {
     grid-template-columns: 1fr;
 }
@@ -112,7 +117,6 @@
     align-content: start;
 }
 
-/* Responsividade para mobile */
 @media (max-width: 600px) {
     .form-row {
         grid-template-columns: 1fr;
@@ -129,89 +133,81 @@
 }
 
 /* ========================================
-   LABELS
+   LABELS E INPUTS
    ======================================== */
 
 .form-label {
     font-size: 0.9rem;
     font-weight: 500;
-    color: var(--ink-dim, #555555);
+    color: var(--ink-dim);
     display: block;
 }
 
-/* ========================================
-   INPUTS
-   ======================================== */
-
 .form-input {
     padding: 10px 12px;
-    border: 1px solid var(--line, #e0e0e0);
-    border-radius: 8px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
     font-size: 0.95rem;
     font-family: inherit;
-    background: var(--bg-base, #ffffff);
-    color: var(--ink-norm, #1a1a1a);
-    transition: all 0.2s ease;
+    background: var(--bg);
+    color: var(--ink);
+    transition: border-color var(--duration-fast) var(--ease-standard),
+                box-shadow var(--duration-fast) var(--ease-standard),
+                background-color var(--duration-fast) var(--ease-standard);
     outline: none;
     width: 100%;
     box-sizing: border-box;
 }
 
     .form-input:hover {
-        border-color: var(--primary, #ff6b35);
+        border-color: var(--amber);
     }
 
     .form-input:focus {
-        border-color: var(--primary, #ff6b35);
-        box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
-        background: var(--bg-raise, #fafafa);
+        border-color: var(--amber);
+        box-shadow: 0 0 0 3px rgb(245 165 36 / 0.18);
+        background: var(--bg-raise);
     }
 
     .form-input::placeholder {
-        color: var(--ink-faint, #bbb);
+        color: var(--ink-faint);
     }
 
-/* Input Desabilitado */
 .form-input-disabled {
-    background: var(--bg-faint, #f0f0f0);
-    color: var(--ink-dim, #888);
+    background: var(--bg-press);
+    color: var(--ink-faint);
     cursor: not-allowed;
-    border-color: var(--line, #e0e0e0);
+    border-color: var(--line-soft);
 }
 
     .form-input-disabled:hover {
-        border-color: var(--line, #e0e0e0);
+        border-color: var(--line-soft);
     }
 
-/* Input com Erro */
 .input-error {
-    border-color: #dc2626 !important;
-    background-color: rgba(220, 38, 38, 0.02);
+    border-color: var(--danger) !important;
 }
 
     .input-error:focus {
-        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        box-shadow: 0 0 0 3px rgb(239 75 61 / 0.18);
     }
 
 /* ========================================
-   MENSAGENS DE AJUDA & ERRO
+   MENSAGENS
    ======================================== */
 
 .error-message {
     font-size: 0.8rem;
-    color: #dc2626;
+    color: var(--danger);
     font-weight: 500;
     display: block;
-    margin-top: 2px;
-    animation: slideDown 0.2s ease-out;
+    animation: slideDown var(--duration-fast) var(--ease-standard);
 }
 
 .helper-text {
     font-size: 0.8rem;
-    color: var(--ink-faint, #999);
-    font-style: italic;
+    color: var(--ink-faint);
     display: block;
-    margin-top: 4px;
 }
 
 @keyframes slideDown {
@@ -227,7 +223,7 @@
 }
 
 /* ========================================
-   CAMPO DE SENHA (com botão de olho)
+   CAMPO DE SENHA
    ======================================== */
 
 .password-field-wrapper {
@@ -254,18 +250,19 @@
     background: transparent;
     border: none;
     border-radius: 6px;
-    color: var(--ink-faint, #999);
+    color: var(--ink-faint);
     cursor: pointer;
-    transition: color 0.15s ease, background-color 0.15s ease;
+    transition: color var(--duration-fast) var(--ease-standard),
+                background-color var(--duration-fast) var(--ease-standard);
 }
 
     .password-toggle-btn:hover {
-        color: var(--primary, #ff6b35);
-        background: rgba(255, 107, 53, 0.08);
+        color: var(--amber);
+        background: rgb(245 165 36 / 0.12);
     }
 
     .password-toggle-btn:focus-visible {
-        outline: 2px solid var(--primary, #ff6b35);
+        outline: 2px solid var(--amber);
         outline-offset: 2px;
     }
 
@@ -274,7 +271,7 @@
     }
 
 /* ========================================
-   PASSWORD REQUIREMENTS (checklist dinâmico)
+   CHECKLIST DE SENHA
    ======================================== */
 
 .password-requirements {
@@ -282,7 +279,7 @@
     gap: 4px;
     margin-top: 8px;
     padding: 8px 12px;
-    background: var(--bg-faint, #f5f5f5);
+    background: var(--bg-press);
     border-radius: 6px;
     font-size: 0.8rem;
 }
@@ -291,46 +288,52 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: color 0.2s ease, font-weight 0.2s ease;
+    transition: color var(--duration-base) var(--ease-standard);
 }
 
-/* Ainda não atendido: vermelho e em negrito */
 .requirement-unmet {
-    color: #dc2626;
+    color: var(--danger);
     font-weight: 700;
 }
 
-/* Atendido: verde */
 .requirement-met {
-    color: #16a34a;
+    color: var(--ok);
     font-weight: 400;
 }
 
 /* ========================================
-   BUTTONS
+   BOTÕES E LINKS
    ======================================== */
 
 .btn-primary {
+    min-height: var(--touch);
     padding: 12px 16px;
-    background: var(--primary, #ff6b35);
-    color: white;
+    background: var(--amber);
+    color: var(--amber-ink);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius);
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color var(--duration-fast) var(--ease-standard),
+                transform var(--duration-fast) var(--ease-standard),
+                box-shadow var(--duration-fast) var(--ease-standard);
     margin-top: 12px;
 }
 
     .btn-primary:hover:not(:disabled) {
-        background: var(--primary-dark, #e55a25);
+        background: var(--amber-deep);
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        box-shadow: 0 4px 12px rgb(245 165 36 / 0.3);
     }
 
     .btn-primary:active:not(:disabled) {
         transform: translateY(0);
+    }
+
+    .btn-primary:focus-visible {
+        outline: 2px solid var(--ink);
+        outline-offset: 2px;
     }
 
     .btn-primary:disabled {
@@ -338,87 +341,29 @@
         cursor: not-allowed;
     }
 
-/* ========================================
-   LINKS
-   ======================================== */
-
 .signup-link {
     text-align: center;
-    color: var(--ink-dim, #666);
+    color: var(--ink-dim);
     font-size: 0.85rem;
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: color var(--duration-fast) var(--ease-standard);
     display: block;
 }
 
     .signup-link:hover {
-        color: var(--primary, #ff6b35);
+        color: var(--amber);
         text-decoration: underline;
     }
-
-/* ========================================
-   REQUIRED NOTE
-   ======================================== */
 
 .required-note {
     text-align: center;
     font-size: 0.75rem;
-    color: var(--ink-faint, #999);
+    color: var(--ink-faint);
     margin: 0;
     padding-top: 8px;
 }
 
-/* ========================================
-   DARK MODE SUPPORT
-   ======================================== */
-
-@media (prefers-color-scheme: dark) {
-    .signup-container {
-        background: var(--bg-base, #1a1a1a);
-    }
-
-    .signup-form {
-        background: var(--bg-raise, #2d2d2d);
-        border-color: var(--line, #404040);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-    }
-
-    .form-input {
-        background: var(--bg-base, #1a1a1a);
-        color: var(--ink-norm, #e0e0e0);
-        border-color: var(--line, #404040);
-    }
-
-        .form-input:focus {
-            background: var(--bg-raise, #333);
-        }
-
-    .form-input-disabled {
-        background: var(--bg-faint, #262626);
-        color: var(--ink-dim, #808080);
-    }
-
-    .password-requirements {
-        background: var(--bg-faint, #262626);
-    }
-
-    .password-toggle-btn {
-        color: var(--ink-dim, #808080);
-    }
-
-    .requirement-unmet {
-        color: #f87171;
-    }
-
-    .requirement-met {
-        color: #4ade80;
-    }
-}
-
-/* ========================================
-   LOADING STATE
-   ======================================== */
-
+/* Pulso no botão enquanto a requisição está em voo. */
 .btn-primary:disabled::after {
     content: "";
     display: inline-block;
@@ -426,7 +371,7 @@
     height: 4px;
     margin-left: 8px;
     border-radius: 50%;
-    background: white;
+    background: var(--amber-ink);
     animation: pulse 1.4s infinite;
 }
 
@@ -441,120 +386,24 @@
 }
 
 /* ========================================
-   STATUS DA CONSULTA DE CNPJ
-   ======================================== */
-
-.cnpj-status {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8rem;
-    margin-top: 4px;
-    line-height: 1.4;
-    animation: slideDown 0.2s ease-out;
-}
-
-.cnpj-status-loading {
-    color: var(--ink-dim, #666);
-}
-
-.cnpj-status-ok {
-    color: #16a34a;
-    font-weight: 500;
-}
-
-.cnpj-status-warn {
-    color: #b45309;
-}
-
-.cnpj-status-error {
-    color: #dc2626;
-    font-weight: 500;
-}
-
-.cnpj-retry-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    font: inherit;
-    color: var(--primary, #ff6b35);
-    text-decoration: underline;
-    cursor: pointer;
-}
-
-.cnpj-retry-btn:hover {
-    color: var(--primary-dark, #e55a25);
-}
-
-.cnpj-retry-btn:focus-visible {
-    outline: 2px solid var(--primary, #ff6b35);
-    outline-offset: 2px;
-    border-radius: 3px;
-}
-
-.cnpj-spinner {
-    width: 12px;
-    height: 12px;
-    flex: none;
-    border: 2px solid var(--line, #e0e0e0);
-    border-top-color: var(--primary, #ff6b35);
-    border-radius: 50%;
-    animation: cnpjSpin 0.7s linear infinite;
-}
-
-@keyframes cnpjSpin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .cnpj-spinner {
-        animation-duration: 2s;
-    }
-
-    .cnpj-status {
-        animation: none;
-    }
-}
-
-@media (prefers-color-scheme: dark) {
-    .cnpj-status-loading {
-        color: var(--ink-dim, #a0a0a0);
-    }
-
-    .cnpj-status-ok {
-        color: #4ade80;
-    }
-
-    .cnpj-status-warn {
-        color: #fbbf24;
-    }
-
-    .cnpj-status-error {
-        color: #f87171;
-    }
-}
-
-/* ========================================
    CAMPOS DE CONSULTA EM DESTAQUE (CNPJ e CEP)
-   São os campos que disparam o preenchimento automático — ficam no topo
-   da sua seção, ocupam a linha inteira e têm respiro próprio para as
-   mensagens de status.
+   Disparam o preenchimento automático — ficam no topo da sua seção,
+   ocupam a linha inteira e têm respiro próprio para o status.
    ======================================== */
 
 .cnpj-field,
 .cep-field {
     padding: 16px;
-    border: 1px solid var(--line, #e0e0e0);
+    border: 1px solid var(--line);
     border-radius: 12px;
-    background: var(--bg-faint, #fafafa);
+    background: var(--bg-press);
 }
 
 .cnpj-field .form-label,
 .cep-field .form-label {
     font-size: 0.95rem;
     font-weight: 600;
+    color: var(--ink);
 }
 
 .form-input-lg {
@@ -571,27 +420,34 @@
     margin-top: 8px;
 }
 
-/* O status do CEP reaproveita o visual do CNPJ. */
+/* ========================================
+   STATUS DA CONSULTA (CNPJ e CEP)
+   ======================================== */
+
+.cnpj-status,
 .cep-status {
     display: flex;
     align-items: center;
     gap: 6px;
     font-size: 0.8rem;
     line-height: 1.4;
-    animation: slideDown 0.2s ease-out;
+    animation: slideDown var(--duration-fast) var(--ease-standard);
 }
 
+.cnpj-status-loading,
 .cep-status-loading {
-    color: var(--ink-dim, #666);
+    color: var(--ink-dim);
 }
 
+.cnpj-status-ok,
 .cep-status-ok {
-    color: #16a34a;
+    color: var(--ok);
     font-weight: 500;
 }
 
+.cnpj-status-error,
 .cep-status-error {
-    color: #dc2626;
+    color: var(--danger);
     font-weight: 500;
 }
 
@@ -600,38 +456,79 @@
     align-items: flex-start;
     padding: 8px 10px;
     border-radius: 6px;
-    color: #b45309;
-    background: rgba(180, 83, 9, 0.08);
+    color: var(--busy);
+    background: rgb(245 165 36 / 0.12);
 }
 
+.cnpj-retry-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: var(--amber);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+    .cnpj-retry-btn:hover {
+        color: var(--amber-deep);
+    }
+
+    .cnpj-retry-btn:focus-visible {
+        outline: 2px solid var(--amber);
+        outline-offset: 2px;
+        border-radius: 3px;
+    }
+
+.cnpj-spinner {
+    width: 12px;
+    height: 12px;
+    flex: none;
+    border: 2px solid var(--line);
+    border-top-color: var(--amber);
+    border-radius: 50%;
+    animation: cnpjSpin 0.7s linear infinite;
+}
+
+@keyframes cnpjSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ========================================
+   AJUSTES DO TEMA CLARO
+
+   Só o que os tokens não resolvem sozinhos: sombra e superfície do cartão.
+   No tema claro o --bg-raise é mais claro que o --bg, então o cartão inverte
+   a relação de profundidade e precisa de sombra mais leve.
+   ======================================== */
+
+[data-theme="light"] .signup-form {
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.08);
+}
+
+[data-theme="light"] .form-input:focus {
+    box-shadow: 0 0 0 3px rgb(245 165 36 / 0.22);
+}
+
+/* ========================================
+   MOVIMENTO REDUZIDO
+   ======================================== */
+
 @media (prefers-reduced-motion: reduce) {
+    .signup-form,
+    .error-message,
+    .cnpj-status,
     .cep-status {
         animation: none;
     }
-}
 
-@media (prefers-color-scheme: dark) {
-    .cnpj-field,
-    .cep-field {
-        background: var(--bg-faint, #262626);
-        border-color: var(--line, #404040);
+    .cnpj-spinner {
+        animation-duration: 2s;
     }
 
-    .cep-status-loading {
-        color: var(--ink-dim, #a0a0a0);
-    }
-
-    .cep-status-ok {
-        color: #4ade80;
-    }
-
-    .cep-status-error {
-        color: #f87171;
-    }
-
-    .cnpj-status-warn,
-    .cep-status-warn {
-        color: #fbbf24;
-        background: rgba(251, 191, 36, 0.1);
+    .btn-primary:hover:not(:disabled) {
+        transform: none;
     }
 }

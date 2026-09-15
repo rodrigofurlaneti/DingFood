@@ -423,8 +423,18 @@ capacitor.config.ts.local
 *.jks
 *.p12
 *.pem
-3-BackEnd/src/PointsTableAndExams.Api/appsettings.json
-3-BackEnd/src/PointsTableAndExams.Api/appsettings.Development.json# Local validation artifacts
+# ===== Segredos de configuracao =====
+# Os arquivos versionados (appsettings.json / appsettings.Development.json) contem apenas
+# PLACEHOLDERS. Valor real de desenvolvimento vai em user-secrets:
+#   dotnet user-secrets set "ConnectionStrings:DefaultConnection" "..." --project backend/src/DingFood.API
+# Valor real de producao vai nas linhas Environment= do systemd (dingfood-api.service).
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+**/secrets.json
+*.env
+.env.local
+
+# Local validation artifacts
 /frontend/storybook-static/
 /frontend/npm-audit.json
 /frontend/*-validation.txt

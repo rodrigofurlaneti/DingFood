@@ -22,7 +22,7 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddControllers(options => options.Conventions.Add(new DingFood.API.Authorization.FeatureAccessConvention())).AddJsonOptions(options =>
-    options.JsonSerializerOptions.Converters.Add(new DingFood.API.Serialization.UtcDateTimeConverter()));
+    options.JsonSerializerOptions.Converters.Add(new DingFood.API.Serialization.BrasiliaDateTimeConverter()));
 builder.Services.AddFluentValidationAutoValidation();
 
 ConfigureAuthentication(builder);

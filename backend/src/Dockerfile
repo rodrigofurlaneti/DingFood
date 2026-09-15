@@ -28,8 +28,12 @@ RUN dotnet publish DingFood.API/DingFood.API.csproj -c Release -o /app/publish -
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl \
+# tzdata + TZ: a aplicacao grava e exibe tudo em horario de Brasilia. As entidades usam
+# DateTime.Now, que devolve a hora LOCAL do processo — sem isto, a imagem roda em UTC e os
+# registros saem 3 horas adiantados em relacao ao que o operador ve no PDV.
+RUN apt-get update && apt-get install -y --no-install-recommends curl tzdata \
     && rm -rf /var/lib/apt/lists/*
+ENV TZ=America/Sao_Paulo
 
 RUN useradd --uid 1000 --user-group --create-home appuser
 
