@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { signupApi } from "./signupApi";
 import { signupSchema, SignupFormData } from "./signupSchema";
 import { useCnpjAutofill } from "./useCnpjAutofill";
+import { useCepAutofill } from "./useCepAutofill";
+import { createAutofillTracker } from "./autofillTracker";
 import { phoneMaskFor } from "./cnpjUtils";
 import "./SignupPage.css";
 
@@ -43,6 +45,7 @@ export function SignupPage() {
         watch,
         setValue,
         getValues,
+        setFocus,
         formState: { errors, isSubmitting },
     } = useForm<SignupFormData>({
         resolver: zodResolver(signupSchema),
@@ -52,8 +55,24 @@ export function SignupPage() {
         },
     });
 
+    // Registro único de procedência: CNPJ e CEP escrevem nos mesmos campos de endereço,
+    // e é ele que decide o que pode ser sobrescrito sem apagar o que o usuário digitou.
+    const autofillTracker = useRef(createAutofillTracker()).current;
+
     // Consulta o CNPJ quando o usuário sai do campo e preenche os dados correlatos.
-    const { status: cnpjStatus, handleCnpjBlur, retryLookup } = useCnpjAutofill({ getValues, setValue });
+    const { status: cnpjStatus, handleCnpjBlur, retryLookup } = useCnpjAutofill({
+        getValues,
+        setValue,
+        tracker: autofillTracker,
+    });
+
+    // Consulta o CEP quando o usuário sai do campo e completa o endereço.
+    const { status: cepStatus, handleCepBlur, retryLookup: retryCepLookup } = useCepAutofill({
+        getValues,
+        setValue,
+        setFocus,
+        tracker: autofillTracker,
+    });
 
     // Fixo tem 10 dígitos e celular 11 — a máscara precisa acompanhar o que vier da Receita.
     const companyPhoneValue = watch("companyPhone") || "";
@@ -353,9 +372,9 @@ export function SignupPage() {
                 <section className="form-section">
                     <h2 className="section-title">📍 Endereço <span className="optional-tag">(opcional)</span></h2>
 
-                    <div className="form-row">
-                        {/* CEP */}
-                        <div className="form-group">
+                    <div className="form-row form-row-full">
+                        {/* CEP — dispara o preenchimento do restante do endereço */}
+                        <div className="form-group cep-field">
                             <label htmlFor="addressZipCode" className="form-label">
                                 CEP
                             </label>
@@ -366,6 +385,10 @@ export function SignupPage() {
                                     <InputMask
                                         mask="99999-999"
                                         {...field}
+                                        onBlur={(event: any) => {
+                                            field.onBlur();
+                                            handleCepBlur(event.target.value);
+                                        }}
                                         placeholder="00000-000"
                                     >
                                         {(inputProps: any) => (
@@ -374,7 +397,8 @@ export function SignupPage() {
                                                 id="addressZipCode"
                                                 data-testid="addressZipCode"
                                                 type="text"
-                                                className={`form-input ${errors.addressZipCode ? "input-error" : ""
+                                                inputMode="numeric"
+                                                className={`form-input form-input-lg ${errors.addressZipCode ? "input-error" : ""
                                                     }`}
                                             />
                                         )}
@@ -386,20 +410,57 @@ export function SignupPage() {
                                     {errors.addressZipCode.message}
                                 </span>
                             )}
-                        </div>
 
-                        {/* Cidade */}
-                        <div className="form-group">
-                            <label htmlFor="addressCity" className="form-label">
-                                Cidade
-                            </label>
-                            <input
-                                id="addressCity"
-                                data-testid="addressCity"
-                                placeholder="Ex: São Paulo"
-                                className="form-input"
-                                {...register("addressCity")}
-                            />
+                            {/* Retorno da consulta automática nos Correios */}
+                            {cepStatus.state === "idle" && !errors.addressZipCode && (
+                                <span className="helper-text">
+                                    Digite o CEP e saia do campo — completamos rua, bairro, cidade e UF.
+                                </span>
+                            )}
+
+                            {cepStatus.state === "loading" && (
+                                <span className="cep-status cep-status-loading" data-testid="cep-status">
+                                    <span className="cnpj-spinner" aria-hidden="true" />
+                                    Consultando o CEP nos Correios…
+                                </span>
+                            )}
+
+                            {cepStatus.state === "error" && (
+                                <span className="cep-status cep-status-error" data-testid="cep-status" role="status">
+                                    {cepStatus.message}{" "}
+                                    <button type="button" className="cnpj-retry-btn" onClick={retryCepLookup}>
+                                        tentar de novo
+                                    </button>
+                                </span>
+                            )}
+
+                            {cepStatus.state === "filled" && (
+                                <>
+                                    <span className="cep-status cep-status-ok" data-testid="cep-status" role="status">
+                                        ✓ {[cepStatus.data.street, cepStatus.data.district, cepStatus.data.city]
+                                            .filter(Boolean)
+                                            .join(", ") || cepStatus.data.cepFormatted}
+                                        {cepStatus.filledCount > 0 &&
+                                            ` — ${cepStatus.filledCount} campo${cepStatus.filledCount > 1 ? "s" : ""} preenchido${cepStatus.filledCount > 1 ? "s" : ""}`}
+                                        {cepStatus.keptCount > 0 &&
+                                            ` (${cepStatus.keptCount} mantido${cepStatus.keptCount > 1 ? "s" : ""} como você digitou)`}
+                                    </span>
+
+                                    {!cepStatus.data.street && (
+                                        <span className="cep-status cep-status-warn">
+                                            Este CEP cobre a cidade inteira — informe a rua manualmente.
+                                        </span>
+                                    )}
+
+                                    {cepStatus.data.staleData && (
+                                        <span className="cep-status cep-status-warn">
+                                            Dados de{" "}
+                                            {new Date(cepStatus.data.queriedAt).toLocaleDateString("pt-BR")} — a
+                                            consulta online falhou agora.
+                                        </span>
+                                    )}
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -467,6 +528,22 @@ export function SignupPage() {
                                     {errors.addressState.message}
                                 </span>
                             )}
+                        </div>
+                    </div>
+
+                    <div className="form-row form-row-full">
+                        {/* Cidade */}
+                        <div className="form-group">
+                            <label htmlFor="addressCity" className="form-label">
+                                Cidade
+                            </label>
+                            <input
+                                id="addressCity"
+                                data-testid="addressCity"
+                                placeholder="Ex: São Paulo"
+                                className="form-input"
+                                {...register("addressCity")}
+                            />
                         </div>
                     </div>
                 </section>

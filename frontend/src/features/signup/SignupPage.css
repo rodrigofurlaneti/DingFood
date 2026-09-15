@@ -535,3 +535,103 @@
         color: #f87171;
     }
 }
+
+/* ========================================
+   CAMPOS DE CONSULTA EM DESTAQUE (CNPJ e CEP)
+   São os campos que disparam o preenchimento automático — ficam no topo
+   da sua seção, ocupam a linha inteira e têm respiro próprio para as
+   mensagens de status.
+   ======================================== */
+
+.cnpj-field,
+.cep-field {
+    padding: 16px;
+    border: 1px solid var(--line, #e0e0e0);
+    border-radius: 12px;
+    background: var(--bg-faint, #fafafa);
+}
+
+.cnpj-field .form-label,
+.cep-field .form-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.form-input-lg {
+    font-size: 1.15rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+    padding: 14px 16px;
+}
+
+.cnpj-field .cnpj-status,
+.cnpj-field .helper-text,
+.cep-field .cep-status,
+.cep-field .helper-text {
+    margin-top: 8px;
+}
+
+/* O status do CEP reaproveita o visual do CNPJ. */
+.cep-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    animation: slideDown 0.2s ease-out;
+}
+
+.cep-status-loading {
+    color: var(--ink-dim, #666);
+}
+
+.cep-status-ok {
+    color: #16a34a;
+    font-weight: 500;
+}
+
+.cep-status-error {
+    color: #dc2626;
+    font-weight: 500;
+}
+
+.cnpj-status-warn,
+.cep-status-warn {
+    align-items: flex-start;
+    padding: 8px 10px;
+    border-radius: 6px;
+    color: #b45309;
+    background: rgba(180, 83, 9, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cep-status {
+        animation: none;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .cnpj-field,
+    .cep-field {
+        background: var(--bg-faint, #262626);
+        border-color: var(--line, #404040);
+    }
+
+    .cep-status-loading {
+        color: var(--ink-dim, #a0a0a0);
+    }
+
+    .cep-status-ok {
+        color: #4ade80;
+    }
+
+    .cep-status-error {
+        color: #f87171;
+    }
+
+    .cnpj-status-warn,
+    .cep-status-warn {
+        color: #fbbf24;
+        background: rgba(251, 191, 36, 0.1);
+    }
+}

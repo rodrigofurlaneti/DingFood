@@ -9,8 +9,10 @@ using DingFood.Domain.Repositories;
 using DingFood.Infrastructure.Authentication;
 using DingFood.Infrastructure.Fiscal;
 using DingFood.Application.Abstractions.Integrations.Cnpja;
+using DingFood.Application.Abstractions.Integrations.ViaCep;
 using DingFood.Infrastructure.Integrations.Asaas;
 using DingFood.Infrastructure.Integrations.Cnpja;
+using DingFood.Infrastructure.Integrations.ViaCep;
 using DingFood.Infrastructure.Integrations.Ifood;
 using DingFood.Infrastructure.Integrations.Keeta;
 using DingFood.Infrastructure.Integrations.WhatsApp;
@@ -242,6 +244,15 @@ public static class DependencyInjection
         services.AddScoped<ICnpjQueryRepository, CnpjQueryRepository>();
         services.AddSingleton<ICnpjaOptions, CnpjaOptionsProvider>();
         services.AddHttpClient<ICnpjaClient, CnpjaClient>(c => c.Timeout = TimeSpan.FromSeconds(15));
+
+        // ------------------------------ ViaCEP (consulta de CEP) ------------------------------
+        // Serviço gratuito sem autenticação, mas que bloqueia acesso por uso massivo. O cache
+        // longo (CacheTtlDays) é a proteção — endereço de CEP praticamente não muda.
+        services.Configure<ViaCepSettings>(configuration.GetSection(ViaCepSettings.SectionName));
+        services.AddScoped<ICepQueryRepository, CepQueryRepository>();
+        services.AddSingleton<IViaCepOptions, ViaCepOptionsProvider>();
+        services.AddHttpClient<IViaCepClient, ViaCepClient>(c => c.Timeout = TimeSpan.FromSeconds(10));
+        // --------------------------------------------------------------------------------------
         return services;
     }
 }

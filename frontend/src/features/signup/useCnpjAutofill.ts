@@ -3,6 +3,7 @@ import type { UseFormGetValues, UseFormSetValue } from "react-hook-form";
 import type { SignupFormData } from "./signupSchema";
 import { CnpjLookupResponse, describeCnpjError, lookupCnpj } from "./cnpjApi";
 import { isValidCnpj, onlyDigits } from "./cnpjUtils";
+import type { AutofillTracker } from "./autofillTracker";
 
 export type CnpjAutofillStatus =
     | { state: "idle" }
@@ -77,15 +78,15 @@ function buildPatch(data: CnpjLookupResponse): Partial<Record<FillableField, str
 interface UseCnpjAutofillArgs {
     getValues: UseFormGetValues<SignupFormData>;
     setValue: UseFormSetValue<SignupFormData>;
+    /** Compartilhado com o autofill do CEP — os dois escrevem nos campos de endereço. */
+    tracker: AutofillTracker;
 }
 
-export function useCnpjAutofill({ getValues, setValue }: UseCnpjAutofillArgs) {
+export function useCnpjAutofill({ getValues, setValue, tracker }: UseCnpjAutofillArgs) {
     const [status, setStatus] = useState<CnpjAutofillStatus>({ state: "idle" });
 
     /** Último CNPJ consultado, para não repetir a chamada a cada blur. */
     const lastQueriedRef = useRef<string>("");
-    /** O que preenchemos da última vez — permite sobrescrever sem destruir o que o usuário digitou. */
-    const lastPatchRef = useRef<Partial<Record<FillableField, string>>>({});
     const abortRef = useRef<AbortController | null>(null);
 
     const runLookup = useCallback(
@@ -119,22 +120,18 @@ export function useCnpjAutofill({ getValues, setValue }: UseCnpjAutofillArgs) {
                     if (!incoming) continue;
 
                     const current = (getValues(field) as string | undefined) ?? "";
-                    const previouslyFilled = lastPatchRef.current[field];
 
-                    // Sobrescreve só o que está vazio ou o que nós mesmos preenchemos antes.
-                    // Nada que o usuário digitou à mão é perdido.
-                    const isEmpty = current.trim() === "";
-                    const isOurs = previouslyFilled !== undefined && current === previouslyFilled;
-
-                    if (isEmpty || isOurs) {
+                    // Sobrescreve só o que está vazio ou o que algum autopreenchimento
+                    // colocou ali. Nada digitado à mão é perdido.
+                    if (tracker.canOverwrite(field, current)) {
                         setValue(field, incoming, { shouldValidate: true, shouldDirty: true });
+                        tracker.remember(field, incoming);
                         filledCount++;
                     } else if (current !== incoming) {
                         keptCount++;
                     }
                 }
 
-                lastPatchRef.current = patch;
                 setStatus({ state: "filled", data, filledCount, keptCount });
             } catch (error) {
                 if (controller.signal.aborted) return;
@@ -142,7 +139,7 @@ export function useCnpjAutofill({ getValues, setValue }: UseCnpjAutofillArgs) {
                 setStatus({ state: "error", message: describeCnpjError(error) });
             }
         },
-        [getValues, setValue],
+        [getValues, setValue, tracker],
     );
 
     /** Handler para o onBlur do campo CNPJ. */

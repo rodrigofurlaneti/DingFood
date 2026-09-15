@@ -21,7 +21,11 @@ public sealed partial class AppDbContext
         // Snapshot da consulta pública de CNPJ (CNPJá/Receita Federal): dado público, igual para
         // todos os tenants, sem CompanyId. Declarado aqui — e não por FK — porque é justamente
         // esse compartilhamento que protege a cota de 5 consultas/minuto da API pública.
-        "CnpjQuery"
+        "CnpjQuery",
+        // Snapshot da consulta de CEP (ViaCEP/Correios): um CEP é o mesmo para todas as
+        // empresas. Compartilhar reduz o volume de chamadas a um serviço que bloqueia
+        // acesso por uso massivo.
+        "CepQuery"
     };
     internal static readonly HashSet<string> IdentityTables = new(StringComparer.Ordinal)
     { "AppUser", "AppUserCompany", "AppUserBranch", "RefreshToken", "AccessLog", "LogTracker", "BusinessGroup", "Company", "Brand", "CompanyBrand", "UserRole" };
