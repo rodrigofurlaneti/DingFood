@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -195,6 +195,19 @@ static void ConfigureRateLimiting(WebApplicationBuilder builder)
                 factory: _ => new FixedWindowRateLimiterOptions
                 {
                     PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                }));
+
+        // Cadastro público de empresa (self-service onboarding, SlideUpController): mais
+        // restritivo que "auth" porque criar conta é uma ação rara e sensível — não deveria
+        // ser tentada dezenas de vezes por minuto por um usuário legítimo.
+        options.AddPolicy("slideup", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5,
                     Window = TimeSpan.FromMinutes(1),
                     QueueLimit = 0
                 }));

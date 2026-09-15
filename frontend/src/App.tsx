@@ -4,7 +4,7 @@ import { useAuthStore } from "./stores/authStore";
 import { CompanyContextGate } from "./components/CompanyContextGate";
 import { AppShell } from "./components/AppShell";
 import { LoginPage } from "./features/auth/LoginPage";
-import { SignupPage } from "./features/auth/SignupPage";
+import { SignupPage } from "./features/signup/SignupPage";
 import { OrdersPage } from "./features/orders/OrdersPage";
 import { DeliveryBoardPage } from "./features/orders/DeliveryBoardPage";
 import { OwnDeliveryPage } from "./features/orders/OwnDeliveryPage";

@@ -181,7 +181,7 @@ export function LoginPage() {
                     </button>
 
                     <Link to="/cadastro" style={{ textAlign: "center", color: "var(--ink-dim)", fontSize: "0.85rem" }}>
-                        Ainda não tem conta? Cadastre seu bar
+                        Ainda não tem conta? Cadastre seu restaurante ou bar aqui.
                     </Link>
 
                     <div style={{ textAlign: "center", marginTop: 8, borderTop: "1px solid var(--line)", paddingTop: 12 }}>
