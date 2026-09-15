@@ -185,7 +185,7 @@ internal sealed class RegisterCompanyCommandHandler : BaseCommandHandler<Registe
     {
         var nameBranch = "Filial " + request.BranchName;
         var branchResult = Branch.Create(
-            companyId, nameBranch, request.BranchCnpj, request.CompanyPhone,
+            companyId, nameBranch, request.Cnpj, request.CompanyPhone,
             request.AddressStreet, request.AddressNumber, request.AddressDistrict,
             request.AddressCity, request.AddressState, request.AddressZipCode);
         if (branchResult.IsFailure)

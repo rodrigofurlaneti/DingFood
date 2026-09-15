@@ -186,7 +186,7 @@ export function LoginPage() {
 
                     <div style={{ textAlign: "center", marginTop: 8, borderTop: "1px solid var(--line)", paddingTop: 12 }}>
                         <span style={{ color: "var(--ink-faint)", fontSize: "0.75rem", fontFamily: "monospace" }}>
-                            Hash: {commitHash} - Release: 1.26v - Update: 2026-09-10
+                            Hash: {commitHash} - Release: 1.27v - Update: 2026-09-14
                         </span>
                     </div>
                 </form>
